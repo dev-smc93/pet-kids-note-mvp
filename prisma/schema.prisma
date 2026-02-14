@@ -20,11 +20,12 @@ model Profile {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  ownedGroups   Group[]       @relation("GroupOwner")
-  memberships   Membership[]
-  ownedPets     Pet[]         @relation("PetOwner")
-  authoredReports Report[]    @relation("ReportAuthor")
-  reportReads   ReportRead[]
+  ownedGroups      Group[]         @relation("GroupOwner")
+  memberships      Membership[]
+  ownedPets        Pet[]           @relation("PetOwner")
+  authoredReports Report[]        @relation("ReportAuthor")
+  reportReads     ReportRead[]
+  reportComments  ReportComment[] @relation("ReportCommentAuthor")
 
   @@map("profiles")
 }
@@ -103,10 +104,11 @@ model Report {
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
-  pet         Pet          @relation(fields: [petId], references: [id], onDelete: Cascade)
-  author      Profile      @relation("ReportAuthor", fields: [authorUserId], references: [userId], onDelete: Cascade)
-  media       ReportMedia[]
-  reportReads ReportRead[]
+  pet            Pet             @relation(fields: [petId], references: [id], onDelete: Cascade)
+  author         Profile         @relation("ReportAuthor", fields: [authorUserId], references: [userId], onDelete: Cascade)
+  media          ReportMedia[]
+  reportReads    ReportRead[]
+  reportComments ReportComment[]
 
   @@map("reports")
 }
@@ -122,6 +124,21 @@ model ReportMedia {
   report Report @relation(fields: [reportId], references: [id], onDelete: Cascade)
 
   @@map("report_media")
+}
+
+// report_comments - 알림장 댓글 (관리자 ↔ 보호자 간 대화)
+model ReportComment {
+  id           String   @id @default(uuid())
+  reportId     String   @map("report_id")
+  authorUserId String   @map("author_user_id")
+  content      String   @db.Text
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  report Report  @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  author Profile @relation("ReportCommentAuthor", fields: [authorUserId], references: [userId], onDelete: Cascade)
+
+  @@map("report_comments")
 }
 
 // report_reads - 알림장 읽음 처리

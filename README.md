@@ -48,6 +48,7 @@ memberships(user_id, group_id, pet_id, status)           // status: PENDING|APPR
 reports(id, pet_id, author_user_id, content, created_at, updated_at)
 report_media(id, report_id, url, type)
 report_reads(report_id, user_id, read_at)
+report_comments(id, report_id, author_user_id, content, created_at, updated_at)  // 관리자↔보호자 댓글
 ```
 
 ---
@@ -91,6 +92,7 @@ report_reads(report_id, user_id, read_at)
 - [ ] 읽음 처리: 열람 여부 표시 (미열람/열람)
 - [ ] 재알림(재전송): 미열람 사용자에게 다시 알림 (초기엔 "표시/버튼"까지만)
 - [ ] 수정/삭제: 관리자만 가능
+- [ ] **관리자 & 보호자 간 댓글 기능** (알림장 단위로 대화)
 
 ### D. 간소화 알림장 모드 (선택)
 
