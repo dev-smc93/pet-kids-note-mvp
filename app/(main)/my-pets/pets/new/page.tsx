@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth/auth-context";
 import { GuardianPetForm } from "@/components/pets/guardian-pet-form";
+import { MainHeader } from "@/components/layout/main-header";
 
 export default function NewPetPage() {
   const { profile, isLoading } = useAuth();
@@ -26,11 +27,7 @@ export default function NewPetPage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-zinc-50">
-      <header className="sticky top-0 z-10 flex items-center justify-between border-b border-zinc-200 bg-white px-4 py-3">
-        <Link href="/my-pets" className="text-lg font-semibold text-zinc-900">
-          ← 반려동물 등록
-        </Link>
-      </header>
+      <MainHeader variant="back" backHref="/my-pets" backLabel="반려동물 등록" />
 
       <main className="flex-1 px-4 py-6">
         <div className="mx-auto max-w-md">

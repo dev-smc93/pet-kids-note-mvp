@@ -7,6 +7,7 @@ import { useAuth } from "@/lib/auth/auth-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
+import { MainHeader } from "@/components/layout/main-header";
 
 const SIDO_OPTIONS = [
   { value: "", label: "전체" },
@@ -134,11 +135,7 @@ export default function SearchCentersPage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-zinc-50">
-      <header className="sticky top-0 z-10 flex items-center justify-between border-b border-zinc-200 bg-white px-4 py-3">
-        <Link href="/my-pets" className="text-lg font-semibold text-zinc-900">
-          ← 원 검색
-        </Link>
-      </header>
+      <MainHeader variant="back" backHref="/my-pets" backLabel="원 검색" />
 
       <main className="flex-1 px-4 py-6">
         <div className="mx-auto max-w-md space-y-6">

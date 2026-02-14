@@ -16,6 +16,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "반려동물 알림장",
   description: "반려동물 돌봄 알림장",
+  icons: {
+    icon: "/images/logo/icon.svg",
+  },
 };
 
 export default function RootLayout({

@@ -4,9 +4,10 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth/auth-context";
 import { Button } from "@/components/ui/button";
+import { MainHeader } from "@/components/layout/main-header";
 
 export default function HomePage() {
-  const { user, profile, signOut } = useAuth();
+  const { user, profile } = useAuth();
   const [groupCount, setGroupCount] = useState<number | null>(null);
 
   useEffect(() => {
@@ -20,17 +21,7 @@ export default function HomePage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-zinc-50">
-      <header className="sticky top-0 z-10 flex items-center justify-between border-b border-zinc-200 bg-white px-4 py-3">
-        <h1 className="text-lg font-semibold text-zinc-900">반려동물 알림장</h1>
-        <div className="flex items-center gap-2">
-          {profile && (
-            <span className="text-sm text-zinc-600">{profile.name}</span>
-          )}
-          <Button variant="ghost" onClick={() => signOut()} className="text-sm">
-            로그아웃
-          </Button>
-        </div>
-      </header>
+      <MainHeader variant="home" />
 
       <main className="flex-1 px-4 py-6">
         <div className="mx-auto max-w-md space-y-4">

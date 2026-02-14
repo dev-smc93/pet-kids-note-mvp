@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useAuth } from "@/lib/auth/auth-context";
 import { GroupList } from "@/components/groups/group-list";
 import { Button } from "@/components/ui/button";
+import { MainHeader } from "@/components/layout/main-header";
 
 export default function GroupsPage() {
   const { profile, isLoading } = useAuth();
@@ -27,11 +28,7 @@ export default function GroupsPage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-zinc-50">
-      <header className="sticky top-0 z-10 flex items-center justify-between border-b border-zinc-200 bg-white px-4 py-3">
-        <Link href="/" className="text-lg font-semibold text-zinc-900">
-          ← 원 관리
-        </Link>
-      </header>
+      <MainHeader variant="back" backHref="/" backLabel="원 관리" />
 
       <main className="flex-1 px-4 py-6">
         <div className="mx-auto max-w-md">
