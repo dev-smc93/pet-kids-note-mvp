@@ -68,10 +68,10 @@ report_reads(report_id, user_id, read_at)
 
 ### A. 인증
 
-- [ ] 회원가입
-- [ ] 로그인
-- [ ] 로그아웃
-- [ ] 기본 프로필 (닉네임, 역할)
+- [x] 회원가입
+- [x] 로그인
+- [x] 로그아웃
+- [x] 기본 프로필 (닉네임, 역할)
 
 ### B. 반려동물 연결
 
@@ -138,11 +138,16 @@ Vercel 배포 완료 후 적용 가능
 
 ## Getting Started
 
+1. `.env`에 Supabase 관련 변수 추가 (`.env.example` 참고)
+2. `npm run dev` 실행
+3. [http://localhost:3000](http://localhost:3000) 접속
+
 ```bash
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser.
+**프로젝트 구조**  
+→ [doc/프론트&백구조.md](./doc/프론트&백구조.md)
 
 ---
 
