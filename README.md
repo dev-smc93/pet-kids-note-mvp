@@ -120,3 +120,16 @@ npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser.
+
+---
+
+## 시드 데이터
+
+Supabase Auth 연동 후, 테스트용 시드 데이터를 넣을 수 있습니다.
+
+1. Supabase 대시보드에서 테스트 계정 생성 (Authentication > Users)
+2. 해당 사용자의 `user_id` (UUID) 복사
+3. `.env`에 `SEED_USER_ID="복사한-uuid"` 추가
+4. `npm run db:seed` 실행
+
+시드 내용: Profile(관리자) → Group(A반) → Pet(초코) → Report(알림장) → InviteCode(SEED-INVITE-001)
