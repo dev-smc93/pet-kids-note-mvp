@@ -1,36 +1,122 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 반려동물 알림장 MVP
+
+반려동물 돌봄 알림장을 "반(그룹)" 단위로 작성/열람할 수 있는 최소 기능 구현 (Web Only → Vercel)
+
+**목표 기간: 8일**
+
+---
+
+## 1. 프로젝트 목표
+
+- 반려동물 돌봄 알림장을 "반(그룹)" 단위로 작성/열람할 수 있는 최소 기능 구현
+- 로그인/회원가입 + 알림장 작성/조회/읽음까지만 제공
+- Next.js 기반으로 Vercel 배포까지 완료
+- **(2차)** 안정화 후 PWA 적용
+
+---
+
+## 2. 사용자/권한 (최소)
+
+| 역할                          | 권한                          |
+| ----------------------------- | ----------------------------- |
+| **관리자** (센터/호텔/유치원) | 알림장 작성/수정/삭제, 재알림 |
+| **보호자**                    | 알림장 열람, 읽음 처리        |
+
+키즈노트처럼 "역할에 따라 수정/삭제 권한 차등" 구조를 그대로 가져감.
+
+---
+
+## 3. 기술 스택
+
+| 구분    | 기술                    |
+| ------- | ----------------------- |
+| Web     | Next.js                 |
+| DB      | Supabase Postgres       |
+| Auth    | Supabase Auth           |
+| ORM     | Prisma                  |
+| Storage | Supabase Storage (사진) |
+
+---
+
+## 4. 데이터 모델 (초간단)
+
+```
+profiles(user_id, role, name)
+groups(id, name, owner_user_id)           // "반"
+pets(id, group_id, name, photo_url, note)
+memberships(user_id, group_id, pet_id?)   // 보호자 연결
+invite_codes(code, group_id, pet_id?, expires_at)
+reports(id, pet_id, author_user_id, content, created_at, updated_at)
+report_media(id, report_id, url, type)
+report_reads(report_id, user_id, read_at)
+```
+
+---
+
+## 5. 화면 구성 (6개)
+
+1. 로그인/회원가입
+2. (관리자) 반/반려동물 관리
+3. (보호자) 초대코드 입력 + 내 반려동물 선택
+4. 알림장 리스트
+5. 알림장 상세 (읽음 표시)
+6. 알림장 작성/수정 (관리자)
+
+---
+
+## 6. 기능별 체크리스트
+
+### A. 인증
+
+- [ ] 회원가입
+- [ ] 로그인
+- [ ] 로그아웃
+- [ ] 기본 프로필 (닉네임, 역할)
+
+### B. 반려동물 연결
+
+- [ ] 관리자: 반(그룹) 생성
+- [ ] 관리자: 반려동물 등록 (이름/사진/특이사항)
+- [ ] 보호자: 초대코드 입력 → 특정 반(또는 반려동물)에 연결
+
+### C. 알림장 (핵심)
+
+- [ ] 관리자: 알림장 작성
+  - [ ] 필수: 내용 (최대 5,000자)
+  - [ ] 선택: 사진 첨부 (3~10장 제한)
+  - [ ] 대상: 반 또는 반려동물(개별) 중 선택 (MVP에선 개별만 해도 충분)
+- [ ] 보호자: 알림장 목록 조회
+- [ ] 보호자: 알림장 상세 조회
+- [ ] 읽음 처리: 열람 여부 표시 (미열람/열람)
+- [ ] 재알림(재전송): 미열람 사용자에게 다시 알림 (초기엔 "표시/버튼"까지만)
+- [ ] 수정/삭제: 관리자만 가능
+
+### D. 간소화 알림장 모드 (선택)
+
+- [ ] 관리자 설정 ON/OFF
+- [ ] ON 시: 200자 제한 + 첨부 불가
+
+### E. 배포 및 마무리
+
+- [ ] Vercel 배포
+- [ ] env 세팅
+- [ ] QA 및 버그픽스
+- [ ] UX 마감
+
+---
+
+## 7. 2차 계획 (PWA)
+
+Vercel 배포 완료 후 적용 가능
+
+- manifest + 아이콘 + 서비스워커(기본 캐싱)만으로 "설치형 웹앱" 제공
+
+---
 
 ## Getting Started
 
-First, run the development server:
-
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Open [http://localhost:3000](http://localhost:3000) with your browser.
