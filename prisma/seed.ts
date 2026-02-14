@@ -49,22 +49,38 @@ async function main() {
     });
     console.log("✅ Profile(보호자) 생성/확인:", guardianProfile.name);
 
-    // 3. Group (원 - 관리자 소유)
-    let group = await prisma.group.findFirst({
+    // 3. Groups (원 - 관리자 소유, 6개 지역)
+    const groupsData = [
+      { name: "해피펫 유치원", sido: "서울특별시", sigungu: "강남구", address: "테스트 주소 123" },
+      { name: "해피펫 유치원 부산점", sido: "부산광역시", sigungu: "해운대구", address: "테스트 주소 456" },
+      { name: "해피펫 유치원 대구점", sido: "대구광역시", sigungu: "수성구", address: "테스트 주소 789" },
+      { name: "해피펫 유치원 인천점", sido: "인천광역시", sigungu: "연수구", address: "테스트 주소 101" },
+      { name: "해피펫 유치원 분당점", sido: "경기도", sigungu: "분당구", address: "테스트 주소 202" },
+      { name: "해피펫 유치원 광주점", sido: "광주광역시", sigungu: "상무동", address: "테스트 주소 303" },
+    ];
+
+    for (const g of groupsData) {
+      const existing = await prisma.group.findFirst({
+        where: { ownerUserId: adminProfile.userId, name: g.name },
+      });
+      if (!existing) {
+        await prisma.group.create({
+          data: {
+            name: g.name,
+            ownerUserId: adminProfile.userId,
+            sido: g.sido,
+            sigungu: g.sigungu,
+            address: g.address,
+          },
+        });
+      }
+    }
+
+    const group = await prisma.group.findFirst({
       where: { ownerUserId: adminProfile.userId, name: "해피펫 유치원" },
     });
-    if (!group) {
-      group = await prisma.group.create({
-        data: {
-          name: "해피펫 유치원",
-          ownerUserId: adminProfile.userId,
-          sido: "서울특별시",
-          sigungu: "강남구",
-          address: "테스트 주소 123",
-        },
-      });
-    }
-    console.log("✅ Group 생성/확인:", group.name);
+    if (!group) throw new Error("해피펫 유치원 생성 실패");
+    console.log("✅ Groups 생성/확인: 6개 지역");
 
     // 4. Pet (반려동물 - 보호자 소유)
     let pet = await prisma.pet.findFirst({
