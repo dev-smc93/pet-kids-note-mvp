@@ -38,7 +38,7 @@ export default function GroupsPage() {
           <div className="mb-4 flex items-center justify-between">
             <h1 className="text-xl font-semibold text-zinc-900">내 원</h1>
             <Link href="/groups/new">
-              <Button>원 만들기</Button>
+              <Button>원 등록하기</Button>
             </Link>
           </div>
           <GroupList />

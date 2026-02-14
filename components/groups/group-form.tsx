@@ -1,10 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+
+interface GroupFormProps {
+  group?: { id: string; name: string; sido: string; sigungu: string; address: string };
+  onSuccess?: () => void;
+  onCancel?: () => void;
+}
 
 const SIDO_OPTIONS = [
   "서울특별시",
@@ -26,7 +33,7 @@ const SIDO_OPTIONS = [
   "제주특별자치도",
 ];
 
-export function GroupForm() {
+export function GroupForm({ group, onSuccess, onCancel }: GroupFormProps) {
   const [name, setName] = useState("");
   const [sido, setSido] = useState("서울특별시");
   const [sigungu, setSigungu] = useState("");
@@ -34,6 +41,16 @@ export function GroupForm() {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const isEdit = !!group;
+
+  useEffect(() => {
+    if (group) {
+      setName(group.name);
+      setSido(group.sido || "서울특별시");
+      setSigungu(group.sigungu || "");
+      setAddress(group.address || "");
+    }
+  }, [group]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,8 +65,10 @@ export function GroupForm() {
     }
     setIsLoading(true);
 
-    const res = await fetch("/api/groups", {
-      method: "POST",
+    const url = isEdit ? `/api/groups/${group.id}` : "/api/groups";
+    const method = isEdit ? "PATCH" : "POST";
+    const res = await fetch(url, {
+      method,
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         name: name.trim(),
@@ -61,18 +80,25 @@ export function GroupForm() {
 
     const data = await res.json();
     if (!res.ok) {
-      setError(data.error ?? "생성에 실패했습니다.");
+      setError(data.error ?? (isEdit ? "수정에 실패했습니다." : "생성에 실패했습니다."));
       setIsLoading(false);
       return;
     }
 
-    router.push(`/groups/${data.id}`);
-    router.refresh();
+    if (isEdit && onSuccess) {
+      onSuccess();
+    } else {
+      router.push(`/groups/${data.id}`);
+      router.refresh();
+    }
+    setIsLoading(false);
   };
 
   return (
     <form onSubmit={handleSubmit} className="flex w-full max-w-sm flex-col gap-4">
-      <h1 className="text-xl font-semibold text-zinc-900">원 만들기</h1>
+      <h1 className="text-xl font-semibold text-zinc-900">
+        {isEdit ? "원 정보 수정" : "원 등록하기"}
+      </h1>
 
       {error && (
         <p className="rounded-lg bg-red-50 p-3 text-sm text-red-600">{error}</p>
@@ -86,22 +112,17 @@ export function GroupForm() {
         required
       />
 
-      <div>
-        <label className="mb-1.5 block text-sm font-medium text-zinc-700">
-          시/도
-        </label>
-        <select
-          value={sido}
-          onChange={(e) => setSido(e.target.value)}
-          className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm"
-        >
-          {SIDO_OPTIONS.map((s) => (
-            <option key={s} value={s}>
-              {s}
-            </option>
-          ))}
-        </select>
-      </div>
+      <Select
+        label="시/도"
+        value={sido}
+        onChange={(e) => setSido(e.target.value)}
+      >
+        {SIDO_OPTIONS.map((s) => (
+          <option key={s} value={s}>
+            {s}
+          </option>
+        ))}
+      </Select>
 
       <Input
         label="시/군/구"
@@ -118,14 +139,24 @@ export function GroupForm() {
       />
 
       <div className="flex gap-3">
-        <Link href="/groups" className="flex-1">
-          <Button type="button" variant="outline" fullWidth>
-            취소
+        {isEdit && onCancel ? (
+          <div className="flex-1">
+            <Button type="button" variant="outline" fullWidth onClick={onCancel}>
+              취소
+            </Button>
+          </div>
+        ) : (
+          <Link href="/groups" className="flex-1">
+            <Button type="button" variant="outline" fullWidth>
+              취소
+            </Button>
+          </Link>
+        )}
+        <div className="flex-1">
+          <Button type="submit" fullWidth isLoading={isLoading}>
+            {isEdit ? "저장" : "등록하기"}
           </Button>
-        </Link>
-        <Button type="submit" fullWidth isLoading={isLoading}>
-          만들기
-        </Button>
+        </div>
       </div>
     </form>
   );

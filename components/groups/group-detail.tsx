@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { GroupForm } from "@/components/groups/group-form";
 
 interface Membership {
   id: string;
@@ -23,6 +24,7 @@ interface GroupDetailData {
 export function GroupDetail({ groupId }: { groupId: string }) {
   const [group, setGroup] = useState<GroupDetailData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isEditing, setIsEditing] = useState(false);
 
   const fetchGroup = () => {
     fetch(`/api/groups/${groupId}`)
@@ -69,10 +71,36 @@ export function GroupDetail({ groupId }: { groupId: string }) {
   return (
     <div className="space-y-6">
       <div className="rounded-lg bg-white p-4 shadow-sm">
-        <h2 className="text-lg font-semibold text-zinc-900">{group.name}</h2>
-        <p className="mt-1 text-sm text-zinc-500">
-          {group.sido} {group.sigungu} {group.address}
-        </p>
+        {isEditing ? (
+          <GroupForm
+            group={{
+              id: group.id,
+              name: group.name,
+              sido: group.sido,
+              sigungu: group.sigungu,
+              address: group.address,
+            }}
+            onSuccess={() => {
+              fetchGroup();
+              setIsEditing(false);
+            }}
+            onCancel={() => setIsEditing(false)}
+          />
+        ) : (
+          <>
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-lg font-semibold text-zinc-900">{group.name}</h2>
+                <p className="mt-1 text-sm text-zinc-500">
+                  {group.sido} {group.sigungu} {group.address}
+                </p>
+              </div>
+              <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
+                원 정보 수정
+              </Button>
+            </div>
+          </>
+        )}
       </div>
 
       {pending.length > 0 && (

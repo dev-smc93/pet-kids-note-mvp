@@ -1,11 +1,22 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth/auth-context";
 import { Button } from "@/components/ui/button";
 
 export default function HomePage() {
   const { user, profile, signOut } = useAuth();
+  const [groupCount, setGroupCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (profile?.role === "ADMIN") {
+      fetch("/api/groups")
+        .then((res) => (res.ok ? res.json() : []))
+        .then((data) => setGroupCount(Array.isArray(data) ? data.length : 0))
+        .catch(() => setGroupCount(0));
+    }
+  }, [profile?.role]);
 
   return (
     <div className="flex min-h-screen flex-col bg-zinc-50">
@@ -26,12 +37,25 @@ export default function HomePage() {
           {user && profile && (
             <>
               <div className="rounded-lg bg-white p-4 shadow-sm">
-                <p className="text-zinc-600">
-                  안녕하세요, <strong>{profile.name}</strong>님
-                </p>
-                <p className="mt-1 text-sm text-zinc-500">
-                  {profile.role === "ADMIN" ? "관리자" : "보호자"}
-                </p>
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-zinc-600">
+                      안녕하세요, <strong>{profile.name}</strong>님
+                    </p>
+                    <p className="mt-1 text-sm text-zinc-500">
+                      {profile.role === "ADMIN"
+                        ? groupCount !== null && groupCount > 0
+                          ? `${groupCount}개 원 관리자`
+                          : "관리자"
+                        : "보호자"}
+                    </p>
+                  </div>
+                  <Link href="/auth/profile">
+                    <Button variant="outline" size="sm">
+                      프로필 수정
+                    </Button>
+                  </Link>
+                </div>
               </div>
 
               {profile.role === "ADMIN" && (
@@ -69,13 +93,6 @@ export default function HomePage() {
                   </Link>
                 </div>
               )}
-
-              <Link
-                href="/auth/profile"
-                className="inline-block text-sm font-medium text-zinc-500 underline"
-              >
-                프로필 수정
-              </Link>
             </>
           )}
         </div>

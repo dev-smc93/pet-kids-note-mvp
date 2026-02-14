@@ -87,8 +87,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signUp = useCallback(
     async (email: string, password: string) => {
-      const { error } = await supabase.auth.signUp({ email, password });
-      return { error: error?.message ?? null };
+      const { data, error } = await supabase.auth.signUp({ email, password });
+      if (error) return { error: error.message };
+      if (data?.user && (!data.user.identities || data.user.identities.length === 0)) {
+        return { error: "이미 등록된 이메일입니다. 로그인해 주세요." };
+      }
+      return { error: null };
     },
     [supabase.auth]
   );

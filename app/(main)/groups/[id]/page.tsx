@@ -31,7 +31,7 @@ export default function GroupDetailPage() {
     <div className="flex min-h-screen flex-col bg-zinc-50">
       <header className="sticky top-0 z-10 flex items-center justify-between border-b border-zinc-200 bg-white px-4 py-3">
         <Link href="/groups" className="text-lg font-semibold text-zinc-900">
-          ← 반 목록
+          ← 원 정보
         </Link>
       </header>
 

@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getAuthUser } from "@/lib/api/auth";
 
-// POST: 원 연결 승인 요청 (보호자 → 관리자)
 export async function POST(request: Request) {
   const { profile, error } = await getAuthUser();
   if (error) return error;
@@ -40,6 +39,25 @@ export async function POST(request: Request) {
     );
   }
 
+  const activeMembership = await prisma.membership.findFirst({
+    where: {
+      petId,
+      status: { in: ["PENDING", "APPROVED"] },
+      groupId: { not: groupId },
+    },
+  });
+  if (activeMembership) {
+    return NextResponse.json(
+      {
+        error:
+          activeMembership.status === "APPROVED"
+            ? "해당 반려동물은 이미 다른 원에 연결되어 있습니다."
+            : "해당 반려동물은 이미 다른 원에 승인 요청 중입니다.",
+      },
+      { status: 400 }
+    );
+  }
+
   const existing = await prisma.membership.findFirst({
     where: {
       userId: profile!.userId,
@@ -61,7 +79,6 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
-    // REJECTED인 경우 재요청 허용
     const updated = await prisma.membership.update({
       where: { id: existing.id },
       data: { status: "PENDING" },

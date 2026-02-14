@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 interface Pet {
   id: string;
@@ -39,6 +40,7 @@ export function MyPetsList() {
   const [pets, setPets] = useState<Pet[]>([]);
   const [memberships, setMemberships] = useState<Membership[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [deleteTarget, setDeleteTarget] = useState<Membership | null>(null);
 
   const fetchData = () => {
     Promise.all([
@@ -61,6 +63,13 @@ export function MyPetsList() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ groupId, petId }),
+    });
+    if (res.ok) fetchData();
+  };
+
+  const handleDelete = async (membershipId: string) => {
+    const res = await fetch(`/api/memberships/${membershipId}`, {
+      method: "DELETE",
     });
     if (res.ok) fetchData();
   };
@@ -96,7 +105,7 @@ export function MyPetsList() {
             </Link>
           </div>
         ) : (
-          <div className="space-y-2">
+          <div className="max-h-[40vh] space-y-2 overflow-y-auto rounded-lg">
             {pets.map((pet) => (
               <Link
                 key={pet.id}
@@ -151,7 +160,7 @@ export function MyPetsList() {
             </Link>
           </div>
         ) : (
-          <div className="space-y-2">
+          <div className="max-h-[40vh] space-y-2 overflow-y-auto rounded-lg">
             {memberships.map((m) => (
               <div
                 key={m.id}
@@ -176,16 +185,29 @@ export function MyPetsList() {
                     {m.group.name} ({m.group.sido} {m.group.sigungu})
                   </p>
                 </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <StatusBadge status={m.status} />
-                  {m.status === "REJECTED" && (
-                    <Button
-                      variant="outline"
-                      className="text-xs"
-                      onClick={() => handleReRequest(m.group.id, m.pet.id)}
-                    >
-                      재요청
-                    </Button>
+                <div className="flex shrink-0 items-center gap-2">
+                  {m.status === "REJECTED" ? (
+                    <>
+                      <StatusBadge status={m.status} />
+                      <div className="flex flex-col items-end gap-1.5">
+                        <Button
+                          variant="outline"
+                          className="min-w-[72px] px-2 py-1.5 text-xs"
+                          onClick={() => handleReRequest(m.group.id, m.pet.id)}
+                        >
+                          재요청
+                        </Button>
+                        <Button
+                          variant="danger"
+                          className="min-w-[72px] px-2 py-1.5 text-xs"
+                          onClick={() => setDeleteTarget(m)}
+                        >
+                          삭제
+                        </Button>
+                      </div>
+                    </>
+                  ) : (
+                    <StatusBadge status={m.status} />
                   )}
                 </div>
               </div>
@@ -193,6 +215,17 @@ export function MyPetsList() {
           </div>
         )}
       </section>
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => !open && setDeleteTarget(null)}
+        title="목록에서 삭제"
+        description="이 연결 요청을 목록에서 삭제하시겠습니까? 나중에 원 검색을 통해 다시 요청할 수 있습니다."
+        confirmText="삭제"
+        cancelText="취소"
+        variant="danger"
+        onConfirm={() => deleteTarget && handleDelete(deleteTarget.id)}
+      />
     </div>
   );
 }

@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 interface Group {
   id: string;
   name: string;
-  _count: { memberships: number };
+  membershipCounts: { approved: number; pending: number; rejected: number };
 }
 
 export function GroupList() {
@@ -34,7 +34,7 @@ export function GroupList() {
       <div className="rounded-lg bg-white p-6 text-center shadow-sm">
         <p className="text-zinc-600">등록된 원이 없습니다.</p>
         <Link href="/groups/new" className="mt-4 inline-block">
-          <Button>원 만들기</Button>
+          <Button>원 등록하기</Button>
         </Link>
       </div>
     );
@@ -52,7 +52,9 @@ export function GroupList() {
             <div>
               <h3 className="font-medium text-zinc-900">{group.name}</h3>
               <p className="text-sm text-zinc-500">
-                연결 {group._count.memberships}건
+                승인 {group.membershipCounts.approved}건
+                {group.membershipCounts.pending > 0 && ` · 대기 ${group.membershipCounts.pending}건`}
+                {group.membershipCounts.rejected > 0 && ` · 거절 ${group.membershipCounts.rejected}건`}
               </p>
             </div>
             <span className="text-zinc-400">→</span>

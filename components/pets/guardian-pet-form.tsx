@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 interface GuardianPetFormProps {
   pet?: {
@@ -23,11 +24,11 @@ function PetDeleteButton({
   petId: string;
   petName: string;
 }) {
+  const [isOpen, setIsOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const router = useRouter();
 
   const handleDelete = async () => {
-    if (!confirm(`"${petName}"를(을) 삭제하시겠습니까?`)) return;
     setIsDeleting(true);
     const res = await fetch(`/api/pets/${petId}`, { method: "DELETE" });
     if (res.ok) {
@@ -38,15 +39,27 @@ function PetDeleteButton({
   };
 
   return (
-    <Button
-      type="button"
-      variant="ghost"
-      onClick={handleDelete}
-      isLoading={isDeleting}
-      className="mt-2 text-red-600 hover:bg-red-50 hover:text-red-700"
-    >
-      삭제
-    </Button>
+    <>
+      <Button
+        type="button"
+        variant="danger"
+        className="mt-2 w-full"
+        onClick={() => setIsOpen(true)}
+        disabled={isDeleting}
+      >
+        삭제
+      </Button>
+      <ConfirmDialog
+        open={isOpen}
+        onOpenChange={setIsOpen}
+        title="반려동물 삭제"
+        description={`"${petName}"를(을) 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.`}
+        confirmText="삭제"
+        cancelText="취소"
+        variant="danger"
+        onConfirm={handleDelete}
+      />
+    </>
   );
 }
 
@@ -243,9 +256,11 @@ export function GuardianPetForm({ pet }: GuardianPetFormProps) {
             취소
           </Button>
         </Link>
-        <Button type="submit" fullWidth isLoading={isLoading}>
-          {pet ? "저장" : "등록"}
-        </Button>
+        <div className="flex-1">
+          <Button type="submit" fullWidth isLoading={isLoading}>
+            {pet ? "저장" : "등록"}
+          </Button>
+        </div>
       </div>
 
       {pet && <PetDeleteButton petId={pet.id} petName={pet.name} />}

@@ -5,15 +5,24 @@ import { getAuthUser, requireAdmin } from "@/lib/api/auth";
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const sido = searchParams.get("sido");
+  const search = searchParams.get("search");
+  const q = searchParams.get("q");
 
-  // 원 검색 (시/도 필터) - 인증된 사용자
-  if (sido && typeof sido === "string" && sido.trim()) {
+  // 원 검색 (전체/시/도/키워드 필터) - 인증된 사용자
+  if (search === "1") {
     const { error } = await getAuthUser();
     if (error) return error;
 
+    const where: { sido?: string; name?: { contains: string; mode: "insensitive" } } = {};
+    if (sido && typeof sido === "string" && sido.trim()) {
+      where.sido = sido.trim();
+    }
+    if (q && typeof q === "string" && q.trim()) {
+      where.name = { contains: q.trim(), mode: "insensitive" };
+    }
     const groups = await prisma.group.findMany({
-      where: { sido: sido.trim() },
-      orderBy: { name: "asc" },
+      where,
+      orderBy: [{ sido: "asc" }, { name: "asc" }],
       select: {
         id: true,
         name: true,
@@ -33,11 +42,22 @@ export async function GET(request: Request) {
     where: { ownerUserId: profile!.userId },
     orderBy: { createdAt: "desc" },
     include: {
-      _count: { select: { memberships: true } },
+      memberships: { select: { status: true } },
     },
   });
 
-  return NextResponse.json(groups);
+  const groupsWithCounts = groups.map((g) => {
+    const approved = g.memberships.filter((m) => m.status === "APPROVED").length;
+    const pending = g.memberships.filter((m) => m.status === "PENDING").length;
+    const rejected = g.memberships.filter((m) => m.status === "REJECTED").length;
+    const { memberships, ...rest } = g;
+    return {
+      ...rest,
+      membershipCounts: { approved, pending, rejected },
+    };
+  });
+
+  return NextResponse.json(groupsWithCounts);
 }
 
 export async function POST(request: Request) {
