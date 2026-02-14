@@ -13,7 +13,7 @@ datasource db {
 
 // profiles - 사용자 프로필 (Supabase Auth user_id와 연동, Auth는 Supabase에서 관리)
 model Profile {
-  id        String   @id @default(cuid())
+  id        String   @id @default(uuid())
   userId    String   @unique @map("user_id") // Supabase Auth uid
   role      Role     @default(GUARDIAN)
   name      String
@@ -36,7 +36,7 @@ enum Role {
 
 // groups - 반(그룹), 관리자가 생성하는 돌봄 단위
 model Group {
-  id           String   @id @default(cuid())
+  id           String   @id @default(uuid())
   name         String
   ownerUserId  String   @map("owner_user_id")
   createdAt    DateTime @default(now()) @map("created_at")
@@ -52,7 +52,7 @@ model Group {
 
 // pets - 반려동물 (이름, 사진, 특이사항)
 model Pet {
-  id        String   @id @default(cuid())
+  id        String   @id @default(uuid())
   groupId   String   @map("group_id")
   name      String
   photoUrl  String?  @map("photo_url")
@@ -70,7 +70,7 @@ model Pet {
 
 // memberships - 보호자-반-반려동물 연결 (pet_id null이면 반 전체)
 model Membership {
-  id        String   @id @default(cuid())
+  id        String   @id @default(uuid())
   userId    String   @map("user_id")
   groupId   String   @map("group_id")
   petId     String?  @map("pet_id") // null이면 반 전체, 있으면 특정 반려동물
@@ -86,7 +86,7 @@ model Membership {
 
 // invite_codes - 초대코드 (보호자가 반/반려동물에 연결할 때 사용)
 model InviteCode {
-  id        String    @id @default(cuid())
+  id        String    @id @default(uuid())
   code      String    @unique
   groupId   String    @map("group_id")
   petId     String?   @map("pet_id")
@@ -101,7 +101,7 @@ model InviteCode {
 
 // reports - 알림장 (관리자가 작성, 내용 최대 5,000자)
 model Report {
-  id           String   @id @default(cuid())
+  id           String   @id @default(uuid())
   petId        String   @map("pet_id")
   authorUserId String   @map("author_user_id")
   content      String   @db.Text // 최대 5,000자 (앱에서 검증)
@@ -118,7 +118,7 @@ model Report {
 
 // report_media - 알림장 첨부 사진 (3~10장 제한, 앱에서 검증)
 model ReportMedia {
-  id       String   @id @default(cuid())
+  id       String   @id @default(uuid())
   reportId String   @map("report_id")
   url      String
   type     String   // image, etc.
@@ -131,7 +131,7 @@ model ReportMedia {
 
 // report_reads - 알림장 읽음 처리 (열람 여부 표시)
 model ReportRead {
-  id        String   @id @default(cuid())
+  id        String   @id @default(uuid())
   reportId  String   @map("report_id")
   userId    String   @map("user_id")
   readAt    DateTime @default(now()) @map("read_at")
