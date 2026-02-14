@@ -1,0 +1,144 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Prisma Client 생성 설정 (DB URL은 prisma.config.ts에서 관리)
+generator client {
+  provider = "prisma-client-js"
+}
+
+// PostgreSQL 데이터소스 (Supabase)
+datasource db {
+  provider = "postgresql"
+}
+
+// profiles - 사용자 프로필 (Supabase Auth user_id와 연동, Auth는 Supabase에서 관리)
+model Profile {
+  id        String   @id @default(cuid())
+  userId    String   @unique @map("user_id") // Supabase Auth uid
+  role      Role     @default(GUARDIAN)
+  name      String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  ownedGroups   Group[]       @relation("GroupOwner")
+  memberships   Membership[]
+  authoredReports Report[]    @relation("ReportAuthor")
+  reportReads   ReportRead[]
+
+  @@map("profiles")
+}
+
+// Role - 사용자 역할 (관리자/보호자)
+enum Role {
+  ADMIN    // 관리자 (센터/호텔/유치원)
+  GUARDIAN // 보호자
+}
+
+// groups - 반(그룹), 관리자가 생성하는 돌봄 단위
+model Group {
+  id           String   @id @default(cuid())
+  name         String
+  ownerUserId  String   @map("owner_user_id")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  owner        Profile     @relation("GroupOwner", fields: [ownerUserId], references: [userId], onDelete: Cascade)
+  pets         Pet[]
+  memberships  Membership[]
+  inviteCodes  InviteCode[]
+
+  @@map("groups")
+}
+
+// pets - 반려동물 (이름, 사진, 특이사항)
+model Pet {
+  id        String   @id @default(cuid())
+  groupId   String   @map("group_id")
+  name      String
+  photoUrl  String?  @map("photo_url")
+  note      String?  // 특이사항
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  group       Group        @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  memberships Membership[]
+  inviteCodes InviteCode[]
+  reports     Report[]
+
+  @@map("pets")
+}
+
+// memberships - 보호자-반-반려동물 연결 (pet_id null이면 반 전체)
+model Membership {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  groupId   String   @map("group_id")
+  petId     String?  @map("pet_id") // null이면 반 전체, 있으면 특정 반려동물
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user Profile @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  group Group  @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  pet   Pet?   @relation(fields: [petId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, groupId, petId])
+  @@map("memberships")
+}
+
+// invite_codes - 초대코드 (보호자가 반/반려동물에 연결할 때 사용)
+model InviteCode {
+  id        String    @id @default(cuid())
+  code      String    @unique
+  groupId   String    @map("group_id")
+  petId     String?   @map("pet_id")
+  expiresAt DateTime  @map("expires_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  pet   Pet?  @relation(fields: [petId], references: [id], onDelete: Cascade)
+
+  @@map("invite_codes")
+}
+
+// reports - 알림장 (관리자가 작성, 내용 최대 5,000자)
+model Report {
+  id           String   @id @default(cuid())
+  petId        String   @map("pet_id")
+  authorUserId String   @map("author_user_id")
+  content      String   @db.Text // 최대 5,000자 (앱에서 검증)
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  pet         Pet          @relation(fields: [petId], references: [id], onDelete: Cascade)
+  author      Profile      @relation("ReportAuthor", fields: [authorUserId], references: [userId], onDelete: Cascade)
+  media       ReportMedia[]
+  reportReads ReportRead[]
+
+  @@map("reports")
+}
+
+// report_media - 알림장 첨부 사진 (3~10장 제한, 앱에서 검증)
+model ReportMedia {
+  id       String   @id @default(cuid())
+  reportId String   @map("report_id")
+  url      String
+  type     String   // image, etc.
+  createdAt DateTime @default(now()) @map("created_at")
+
+  report Report @relation(fields: [reportId], references: [id], onDelete: Cascade)
+
+  @@map("report_media")
+}
+
+// report_reads - 알림장 읽음 처리 (열람 여부 표시)
+model ReportRead {
+  id        String   @id @default(cuid())
+  reportId  String   @map("report_id")
+  userId    String   @map("user_id")
+  readAt    DateTime @default(now()) @map("read_at")
+
+  report Report  @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  user   Profile @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@unique([reportId, userId])
+  @@map("report_reads")
+}
