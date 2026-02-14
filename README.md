@@ -42,10 +42,9 @@
 
 ```
 profiles(user_id, role, name)
-groups(id, name, owner_user_id)           // "반"
-pets(id, group_id, name, photo_url, note)
-memberships(user_id, group_id, pet_id?)   // 보호자 연결
-invite_codes(code, group_id, pet_id?, expires_at)
+groups(id, name, owner_user_id, sido, sigungu, address)  // "원"
+pets(id, owner_user_id, name, breed, photo_url, note)   // 보호자 소유
+memberships(user_id, group_id, pet_id, status)           // status: PENDING|APPROVED|REJECTED
 reports(id, pet_id, author_user_id, content, created_at, updated_at)
 report_media(id, report_id, url, type)
 report_reads(report_id, user_id, read_at)
@@ -56,8 +55,8 @@ report_reads(report_id, user_id, read_at)
 ## 5. 화면 구성 (6개)
 
 1. 로그인/회원가입
-2. (관리자) 반/반려동물 관리
-3. (보호자) 초대코드 입력 + 내 반려동물 선택
+2. (관리자) 원 관리 (생성, 승인 대기/연결된 반려동물)
+3. (보호자) 반려동물 등록 + 원 검색 → 연결 요청
 4. 알림장 리스트
 5. 알림장 상세 (읽음 표시)
 6. 알림장 작성/수정 (관리자)
@@ -72,12 +71,14 @@ report_reads(report_id, user_id, read_at)
 - [x] 로그인
 - [x] 로그아웃
 - [x] 기본 프로필 (닉네임, 역할)
+- [x] 관리자 회원가입 시 원 정보 (원 이름, 시/도, 시/군/구, 주소) 입력
 
 ### B. 반려동물 연결
 
-- [ ] 관리자: 반(그룹) 생성
-- [ ] 관리자: 반려동물 등록 (이름/사진/특이사항)
-- [ ] 보호자: 초대코드 입력 → 특정 반(또는 반려동물)에 연결
+- [x] 관리자: 원 생성 (이름, 시/도, 시/군/구, 주소)
+- [x] 보호자: 반려동물 등록 (이름, 품종, 사진, 특이사항)
+- [x] 보호자: 시/도로 원 검색 → 연결 요청 (승인 대기)
+- [x] 관리자: 승인 대기 요청 승인/거절
 
 ### C. 알림장 (핵심)
 
@@ -155,9 +156,9 @@ npm run dev
 
 Supabase Auth 연동 후, 테스트용 시드 데이터를 넣을 수 있습니다.
 
-1. Supabase 대시보드에서 테스트 계정 생성 (Authentication > Users)
-2. 해당 사용자의 `user_id` (UUID) 복사
-3. `.env`에 `SEED_USER_ID="복사한-uuid"` 추가
+1. Supabase 대시보드에서 테스트 계정 2개 생성 (Authentication > Users)
+2. 관리자 계정의 `user_id` (UUID) 복사 → `.env`에 `SEED_USER_ID="..."` 추가
+3. 보호자 계정의 `user_id` (UUID) 복사 → `.env`에 `SEED_GUARDIAN_USER_ID="..."` 추가
 4. `npm run db:seed` 실행
 
-시드 내용: Profile(관리자) → Group(A반) → Pet(초코) → Report(알림장) → InviteCode(SEED-INVITE-001)
+시드 내용: Profile(관리자) → Group(해피펫 유치원) / Profile(보호자) → Pet(초코) → Membership(승인됨) → Report(알림장)

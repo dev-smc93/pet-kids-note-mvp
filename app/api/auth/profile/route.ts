@@ -45,7 +45,7 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { name, role } = body;
+    const { name, role, groupName, sido, sigungu, address } = body;
 
     if (!name || typeof name !== "string" || name.trim().length === 0) {
       return NextResponse.json(
@@ -56,6 +56,21 @@ export async function POST(request: Request) {
 
     const validRoles = ["ADMIN", "GUARDIAN"];
     const profileRole = validRoles.includes(role) ? role : "GUARDIAN";
+
+    if (profileRole === "ADMIN") {
+      if (!groupName || typeof groupName !== "string" || groupName.trim().length === 0) {
+        return NextResponse.json(
+          { error: "원 이름을 입력해주세요." },
+          { status: 400 }
+        );
+      }
+      if (!sido || typeof sido !== "string" || sido.trim().length === 0) {
+        return NextResponse.json(
+          { error: "시/도를 입력해주세요." },
+          { status: 400 }
+        );
+      }
+    }
 
     const profile = await prisma.profile.upsert({
       where: { userId: user.id },
@@ -69,6 +84,23 @@ export async function POST(request: Request) {
         role: profileRole,
       },
     });
+
+    if (profileRole === "ADMIN" && groupName && sido) {
+      const existingGroup = await prisma.group.findFirst({
+        where: { ownerUserId: user.id },
+      });
+      if (!existingGroup) {
+        await prisma.group.create({
+          data: {
+            name: groupName.trim(),
+            ownerUserId: user.id,
+            sido: (sido || "").trim(),
+            sigungu: typeof sigungu === "string" ? sigungu.trim() : "",
+            address: typeof address === "string" ? address.trim() : "",
+          },
+        });
+      }
+    }
 
     return NextResponse.json(profile);
   } catch (error) {

@@ -11,10 +11,10 @@ datasource db {
   provider = "postgresql"
 }
 
-// profiles - 사용자 프로필 (Supabase Auth user_id와 연동, Auth는 Supabase에서 관리)
+// profiles - 사용자 프로필 (Supabase Auth user_id와 연동)
 model Profile {
   id        String   @id @default(uuid())
-  userId    String   @unique @map("user_id") // Supabase Auth uid
+  userId    String   @unique @map("user_id")
   role      Role     @default(GUARDIAN)
   name      String
   createdAt DateTime @default(now()) @map("created_at")
@@ -22,6 +22,7 @@ model Profile {
 
   ownedGroups   Group[]       @relation("GroupOwner")
   memberships   Membership[]
+  ownedPets     Pet[]         @relation("PetOwner")
   authoredReports Report[]    @relation("ReportAuthor")
   reportReads   ReportRead[]
 
@@ -34,77 +35,71 @@ enum Role {
   GUARDIAN // 보호자
 }
 
-// groups - 반(그룹), 관리자가 생성하는 돌봄 단위
+// groups - 원(시설), 관리자가 회원가입 시 생성
 model Group {
   id           String   @id @default(uuid())
   name         String
   ownerUserId  String   @map("owner_user_id")
+  sido         String   @map("sido")       // 시/도
+  sigungu      String   @map("sigungu")    // 시/군/구
+  address      String   @map("address")    // 상세 주소
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
-  owner        Profile     @relation("GroupOwner", fields: [ownerUserId], references: [userId], onDelete: Cascade)
-  pets         Pet[]
+  owner        Profile      @relation("GroupOwner", fields: [ownerUserId], references: [userId], onDelete: Cascade)
   memberships  Membership[]
-  inviteCodes  InviteCode[]
 
   @@map("groups")
 }
 
-// pets - 반려동물 (이름, 사진, 특이사항)
+// pets - 반려동물 (보호자가 등록)
 model Pet {
-  id        String   @id @default(uuid())
-  groupId   String   @map("group_id")
-  name      String
-  photoUrl  String?  @map("photo_url")
-  note      String?  // 특이사항
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  id           String   @id @default(uuid())
+  ownerUserId  String   @map("owner_user_id")
+  name         String
+  breed        String?  @map("breed")      // 품종
+  photoUrl     String?  @map("photo_url")
+  note         String?  // 특이사항
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
 
-  group       Group        @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  memberships Membership[]
-  inviteCodes InviteCode[]
-  reports     Report[]
+  owner        Profile      @relation("PetOwner", fields: [ownerUserId], references: [userId], onDelete: Cascade)
+  memberships  Membership[]
+  reports      Report[]
 
   @@map("pets")
 }
 
-// memberships - 보호자-반-반려동물 연결 (pet_id null이면 반 전체)
+// memberships - 보호자-원-반려동물 연결 (승인 요청 방식)
 model Membership {
-  id        String   @id @default(uuid())
-  userId    String   @map("user_id")
-  groupId   String   @map("group_id")
-  petId     String?  @map("pet_id") // null이면 반 전체, 있으면 특정 반려동물
-  createdAt DateTime @default(now()) @map("created_at")
+  id        String         @id @default(uuid())
+  userId    String         @map("user_id")
+  groupId   String         @map("group_id")
+  petId     String         @map("pet_id")
+  status    MembershipStatus @default(PENDING)
+  createdAt DateTime       @default(now()) @map("created_at")
+  updatedAt DateTime       @updatedAt @map("updated_at")
 
-  user Profile @relation(fields: [userId], references: [userId], onDelete: Cascade)
-  group Group  @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  pet   Pet?   @relation(fields: [petId], references: [id], onDelete: Cascade)
+  user  Profile @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  group Group   @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  pet   Pet     @relation(fields: [petId], references: [id], onDelete: Cascade)
 
   @@unique([userId, groupId, petId])
   @@map("memberships")
 }
 
-// invite_codes - 초대코드 (보호자가 반/반려동물에 연결할 때 사용)
-model InviteCode {
-  id        String    @id @default(uuid())
-  code      String    @unique
-  groupId   String    @map("group_id")
-  petId     String?   @map("pet_id")
-  expiresAt DateTime  @map("expires_at")
-  createdAt DateTime  @default(now()) @map("created_at")
-
-  group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  pet   Pet?  @relation(fields: [petId], references: [id], onDelete: Cascade)
-
-  @@map("invite_codes")
+enum MembershipStatus {
+  PENDING   // 승인 대기
+  APPROVED  // 승인됨
+  REJECTED  // 거절됨
 }
 
-// reports - 알림장 (관리자가 작성, 내용 최대 5,000자)
+// reports - 알림장 (관리자가 작성)
 model Report {
   id           String   @id @default(uuid())
   petId        String   @map("pet_id")
   authorUserId String   @map("author_user_id")
-  content      String   @db.Text // 최대 5,000자 (앱에서 검증)
+  content      String   @db.Text
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
@@ -116,12 +111,12 @@ model Report {
   @@map("reports")
 }
 
-// report_media - 알림장 첨부 사진 (3~10장 제한, 앱에서 검증)
+// report_media - 알림장 첨부 사진
 model ReportMedia {
-  id       String   @id @default(uuid())
-  reportId String   @map("report_id")
-  url      String
-  type     String   // image, etc.
+  id        String   @id @default(uuid())
+  reportId  String   @map("report_id")
+  url       String
+  type      String
   createdAt DateTime @default(now()) @map("created_at")
 
   report Report @relation(fields: [reportId], references: [id], onDelete: Cascade)
@@ -129,7 +124,7 @@ model ReportMedia {
   @@map("report_media")
 }
 
-// report_reads - 알림장 읽음 처리 (열람 여부 표시)
+// report_reads - 알림장 읽음 처리
 model ReportRead {
   id        String   @id @default(uuid())
   reportId  String   @map("report_id")
