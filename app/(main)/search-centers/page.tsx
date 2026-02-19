@@ -140,8 +140,7 @@ export default function SearchCentersPage() {
       <main className="flex-1 px-4 py-6">
         <div className="mx-auto max-w-md space-y-6">
           <div>
-            <h1 className="text-xl font-semibold text-zinc-900">원 검색</h1>
-            <p className="mt-1 text-sm text-zinc-500">
+            <p className="text-sm text-zinc-500">
               원 이름으로 검색하거나 시/도로 필터링할 수 있습니다.
             </p>
           </div>

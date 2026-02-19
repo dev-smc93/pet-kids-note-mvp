@@ -243,9 +243,12 @@ export default function ReportsPage() {
                   <li key={r.id}>
                     <Link href={`/reports/${r.id}`}>
                       <div
-                        className={`flex gap-4 rounded-lg bg-white p-4 shadow-sm transition hover:bg-zinc-50 ${
-                          profile.role === "GUARDIAN" && !r.isRead ? "border-l-4 border-amber-500" : ""
-                        }`}
+                        className={`flex gap-4 rounded-lg p-4 shadow-sm transition ${
+                          (profile.role === "GUARDIAN" && !r.isRead) ||
+                          (profile.role === "ADMIN" && r.isReadByGuardian === false)
+                            ? "bg-amber-50 hover:bg-amber-100"
+                            : "bg-white hover:bg-zinc-50"
+                        } ${profile.role === "GUARDIAN" && !r.isRead ? "border-l-4 border-amber-500" : ""}`}
                       >
                         {/* 좌측: 날짜, 요일 */}
                         <div className="flex shrink-0 flex-col items-center border-r border-zinc-100 pr-4">
