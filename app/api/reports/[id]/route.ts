@@ -157,7 +157,8 @@ export async function PATCH(
           update: dr,
         },
       };
-    } else {
+    } else if (report.dailyRecord) {
+      // 생활기록이 있을 때만 삭제 (없는 경우 delete 시 P2025 에러)
       data.dailyRecord = { delete: true };
     }
   }
