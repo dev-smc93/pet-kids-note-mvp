@@ -82,11 +82,17 @@ export function MyPetsList() {
     );
   }
 
+  const membershipsByPet = memberships.reduce((acc, m) => {
+    const pid = m.pet.id;
+    if (!acc[pid]) acc[pid] = [];
+    acc[pid].push(m);
+    return acc;
+  }, {} as Record<string, Membership[]>);
+
   return (
     <div className="space-y-6">
       <section>
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-sm font-medium text-zinc-700">내 반려동물</h2>
+        <div className="mb-3 flex justify-end">
           <Link
             href="/my-pets/pets/new"
             className="text-sm font-medium text-zinc-900 underline"
@@ -105,113 +111,97 @@ export function MyPetsList() {
             </Link>
           </div>
         ) : (
-          <div className="max-h-[40vh] space-y-2 overflow-y-auto rounded-lg">
-            {pets.map((pet) => (
-              <Link
-                key={pet.id}
-                href={`/my-pets/pets/${pet.id}/edit`}
-                className="flex items-center gap-3 rounded-lg bg-white p-4 shadow-sm transition hover:bg-zinc-50"
-              >
-                {pet.photoUrl ? (
-                  <img
-                    src={pet.photoUrl}
-                    alt={pet.name}
-                    className="h-12 w-12 rounded-full object-cover"
-                  />
-                ) : (
-                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-zinc-200 text-xl">
-                    🐾
-                  </div>
-                )}
-                <div className="flex-1">
-                  <p className="font-medium text-zinc-900">{pet.name}</p>
-                  {pet.breed && (
-                    <p className="text-sm text-zinc-500">{pet.breed}</p>
-                  )}
-                </div>
-                <span className="text-zinc-400">→</span>
-              </Link>
-            ))}
-          </div>
-        )}
-      </section>
-
-      <section>
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-sm font-medium text-zinc-700">연결된 원</h2>
-          <Link
-            href="/search-centers"
-            className="text-sm font-medium text-zinc-900 underline"
-          >
-            원 검색
-          </Link>
-        </div>
-        {memberships.length === 0 ? (
-          <div className="rounded-lg bg-white p-6 text-center shadow-sm">
-            <p className="text-zinc-600">연결된 원이 없습니다.</p>
-            <p className="mt-2 text-sm text-zinc-500">
-              원을 검색해 연결 요청을 보내세요.
-            </p>
-            <Link
-              href="/search-centers"
-              className="mt-3 inline-block text-sm font-medium text-zinc-900 underline"
-            >
-              원 검색하기
-            </Link>
-          </div>
-        ) : (
-          <div className="max-h-[40vh] space-y-2 overflow-y-auto rounded-lg">
-            {memberships.map((m) => (
-              <div
-                key={m.id}
-                className={`flex items-center gap-3 rounded-lg p-4 shadow-sm ${
-                  m.status === "REJECTED" ? "bg-red-50/50" : "bg-white"
-                }`}
-              >
-                {m.pet?.photoUrl ? (
-                  <img
-                    src={m.pet.photoUrl}
-                    alt={m.pet.name}
-                    className="h-12 w-12 rounded-full object-cover"
-                  />
-                ) : (
-                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-zinc-200 text-xl">
-                    🐾
-                  </div>
-                )}
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium text-zinc-900">{m.pet.name}</p>
-                  <p className="text-sm text-zinc-500">
-                    {m.group.name} ({m.group.sido} {m.group.sigungu})
-                  </p>
-                </div>
-                <div className="flex shrink-0 items-center gap-2">
-                  {m.status === "REJECTED" ? (
-                    <>
-                      <StatusBadge status={m.status} />
-                      <div className="flex flex-col items-end gap-1.5">
-                        <Button
-                          variant="outline"
-                          className="min-w-[72px] px-2 py-1.5 text-xs"
-                          onClick={() => handleReRequest(m.group.id, m.pet.id)}
-                        >
-                          재요청
-                        </Button>
-                        <Button
-                          variant="danger"
-                          className="min-w-[72px] px-2 py-1.5 text-xs"
-                          onClick={() => setDeleteTarget(m)}
-                        >
-                          삭제
-                        </Button>
+          <div className="max-h-[80vh] space-y-4 overflow-y-auto">
+            {pets.map((pet) => {
+              const petMemberships = membershipsByPet[pet.id] ?? [];
+              return (
+                <div
+                  key={pet.id}
+                  className="overflow-hidden rounded-lg bg-white shadow-sm"
+                >
+                  <Link
+                    href={`/my-pets/pets/${pet.id}/edit`}
+                    className="flex items-center gap-3 p-4 transition hover:bg-zinc-50"
+                  >
+                    {pet.photoUrl ? (
+                      <img
+                        src={pet.photoUrl}
+                        alt={pet.name}
+                        className="h-12 w-12 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-zinc-200 text-xl">
+                        🐾
                       </div>
-                    </>
-                  ) : (
-                    <StatusBadge status={m.status} />
-                  )}
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-zinc-900">{pet.name}</p>
+                      {pet.breed && (
+                        <p className="text-sm text-zinc-500">{pet.breed}</p>
+                      )}
+                    </div>
+                    <span className="text-zinc-400">→</span>
+                  </Link>
+                  <div className="border-t border-zinc-100 px-4 py-3">
+                    {petMemberships.length === 0 ? (
+                      <p className="text-sm text-zinc-500">
+                        연결된 원이 없습니다.{" "}
+                        <Link
+                          href="/search-centers"
+                          className="font-medium text-zinc-900 underline"
+                        >
+                          원 검색하기
+                        </Link>
+                      </p>
+                    ) : (
+                      <div className="space-y-2">
+                        {petMemberships.map((m) => (
+                          <div
+                            key={m.id}
+                            className={`flex items-center justify-between gap-2 rounded-lg px-3 py-2 ${
+                              m.status === "REJECTED" ? "bg-red-50/50" : "bg-zinc-50"
+                            }`}
+                          >
+                            <p className="text-sm text-zinc-700">
+                              {m.group.name} ({m.group.sido} {m.group.sigungu})
+                            </p>
+                            <div className="flex shrink-0 items-center gap-2">
+                              {m.status === "REJECTED" ? (
+                                <>
+                                  <StatusBadge status={m.status} />
+                                  <Button
+                                    variant="outline"
+                                    className="px-2 py-1 text-xs"
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      handleReRequest(m.group.id, m.pet.id);
+                                    }}
+                                  >
+                                    재요청
+                                  </Button>
+                                  <Button
+                                    variant="danger"
+                                    className="px-2 py-1 text-xs"
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      setDeleteTarget(m);
+                                    }}
+                                  >
+                                    삭제
+                                  </Button>
+                                </>
+                              ) : (
+                                <StatusBadge status={m.status} />
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </section>

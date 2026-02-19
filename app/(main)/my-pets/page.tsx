@@ -32,8 +32,7 @@ export default function MyPetsPage() {
       <main className="flex-1 px-4 py-6">
         <div className="mx-auto max-w-md">
           <div className="mb-4">
-            <h1 className="text-xl font-semibold text-zinc-900">내 반려동물</h1>
-            <p className="mt-1 text-sm text-zinc-500">
+            <p className="text-sm text-zinc-500">
               반려동물을 등록하고 원과 연결하세요.
             </p>
           </div>

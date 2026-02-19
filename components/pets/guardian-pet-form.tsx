@@ -162,9 +162,6 @@ export function GuardianPetForm({ pet }: GuardianPetFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="flex w-full max-w-sm flex-col gap-4">
-      <h1 className="text-xl font-semibold text-zinc-900">
-        {pet ? "반려동물 수정" : "반려동물 등록"}
-      </h1>
       <p className="text-sm text-zinc-600">
         반려동물을 등록한 후, 원을 검색해 연결 요청을 보내세요.
       </p>

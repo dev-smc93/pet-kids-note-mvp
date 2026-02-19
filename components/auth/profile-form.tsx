@@ -72,9 +72,6 @@ export function ProfileForm() {
 
   return (
     <form onSubmit={handleSubmit} className="flex w-full max-w-sm flex-col gap-4">
-      <h1 className="text-xl font-semibold text-zinc-900">
-        {profile ? "프로필 수정" : "프로필 설정"}
-      </h1>
       <p className="text-sm text-zinc-600">
         {profile
           ? "닉네임과 역할을 수정할 수 있습니다."
