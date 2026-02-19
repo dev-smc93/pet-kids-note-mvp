@@ -32,8 +32,10 @@ export default function ReportNewPage() {
   const { profile, isLoading } = useAuth();
   const router = useRouter();
   const [groups, setGroups] = useState<GroupOption[]>([]);
+  const [isLoadingGroups, setIsLoadingGroups] = useState(true);
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
   const [groupDetail, setGroupDetail] = useState<GroupDetailData | null>(null);
+  const [isLoadingGroupDetail, setIsLoadingGroupDetail] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -42,23 +44,30 @@ export default function ReportNewPage() {
       return;
     }
     if (profile?.role === "ADMIN") {
+      setIsLoadingGroups(true);
       fetch("/api/groups")
         .then((res) => (res.ok ? res.json() : []))
         .then((data: GroupOption[]) =>
           setGroups(data.filter((g) => (g.membershipCounts?.approved ?? 0) > 0))
         )
-        .catch(() => setGroups([]));
+        .catch(() => setGroups([]))
+        .finally(() => setIsLoadingGroups(false));
+    } else {
+      setIsLoadingGroups(false);
     }
   }, [profile, isLoading, router]);
 
   useEffect(() => {
     if (selectedGroupId) {
+      setIsLoadingGroupDetail(true);
       fetch(`/api/groups/${selectedGroupId}`)
         .then((res) => (res.ok ? res.json() : null))
         .then(setGroupDetail)
-        .catch(() => setGroupDetail(null));
+        .catch(() => setGroupDetail(null))
+        .finally(() => setIsLoadingGroupDetail(false));
     } else {
       setGroupDetail(null);
+      setIsLoadingGroupDetail(false);
     }
   }, [selectedGroupId]);
 
@@ -70,15 +79,51 @@ export default function ReportNewPage() {
     );
   }
 
+  if (!selectedGroupId && isLoadingGroups) {
+    return (
+      <div className="flex min-h-screen flex-col bg-zinc-50">
+        <header className="sticky top-0 z-10 flex items-center justify-between bg-red-500 px-4 py-3">
+          <Link href="/reports" className="flex h-10 w-10 items-center justify-center text-white">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </Link>
+          <h1 className="text-lg font-semibold text-white">알림장 작성(원 선택)</h1>
+          <div className="h-10 w-10" />
+        </header>
+        <main className="flex flex-1 items-center justify-center px-4 py-6">
+          <div className="flex flex-col items-center gap-3">
+            <div className="h-8 w-8 animate-spin rounded-full border-2 border-zinc-300 border-t-zinc-900" />
+            <p className="text-sm text-zinc-500">불러오는 중...</p>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
   const approvedPets =
     groupDetail?.memberships
       .filter((m) => m.status === "APPROVED")
       .map((m) => ({ ...m.pet, ownerName: m.user?.name ?? "" })) ?? [];
 
+  const selectedGroupName = selectedGroupId
+    ? groups.find((g) => g.id === selectedGroupId)?.name ?? ""
+    : "";
+  const headerTitle = selectedGroupName
+    ? `알림장 작성 - ${selectedGroupName}`
+    : "알림장 작성(원 선택)";
+
   return (
-    <div className="flex min-h-screen flex-col bg-zinc-50">
-      <header className="sticky top-0 z-10 flex items-center justify-between bg-red-500 px-4 py-3">
-        <Link href="/reports" className="flex h-10 w-10 items-center justify-center text-white">
+    <div className="relative flex min-h-screen flex-col bg-zinc-50">
+      {isSubmitting && (
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-white/80">
+          <div className="h-10 w-10 animate-spin rounded-full border-2 border-zinc-300 border-t-zinc-900" />
+          <p className="mt-4 text-sm font-medium text-zinc-600">등록 중...</p>
+        </div>
+      )}
+      <header className="sticky top-0 z-10 flex items-center justify-between gap-2 bg-red-500 px-4 py-3">
+        <Link href="/reports" className="flex h-10 w-10 shrink-0 items-center justify-center text-white">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="24"
@@ -94,8 +139,10 @@ export default function ReportNewPage() {
             <line x1="6" y1="6" x2="18" y2="18" />
           </svg>
         </Link>
-        <h1 className="text-lg font-semibold text-white">알림장 작성(원 선택)</h1>
-        <div className="h-10 w-10" />
+        <h1 className="min-w-0 flex-1 truncate text-center text-lg font-semibold text-white">
+          {headerTitle}
+        </h1>
+        <div className="h-10 w-10 shrink-0" />
       </header>
 
       <main className="flex-1 px-4 py-6">
@@ -182,9 +229,14 @@ export default function ReportNewPage() {
                 onLoadingChange={setIsSubmitting}
               />
             </div>
-          ) : (
-            <div className="flex justify-center py-12">
+          ) : isLoadingGroupDetail ? (
+            <div className="flex min-h-[200px] flex-col items-center justify-center py-12">
               <div className="h-8 w-8 animate-spin rounded-full border-2 border-zinc-300 border-t-zinc-900" />
+              <p className="mt-3 text-sm text-zinc-500">불러오는 중...</p>
+            </div>
+          ) : (
+            <div className="flex min-h-[200px] flex-col items-center justify-center py-12">
+              <p className="text-sm text-zinc-500">데이터를 불러올 수 없습니다.</p>
             </div>
           )}
         </div>
