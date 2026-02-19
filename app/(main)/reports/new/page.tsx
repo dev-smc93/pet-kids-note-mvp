@@ -94,7 +94,7 @@ export default function ReportNewPage() {
             <line x1="6" y1="6" x2="18" y2="18" />
           </svg>
         </Link>
-        <h1 className="text-lg font-semibold text-white">알림장 작성</h1>
+        <h1 className="text-lg font-semibold text-white">알림장 작성(원 선택)</h1>
         <div className="h-10 w-10" />
       </header>
 
@@ -102,7 +102,6 @@ export default function ReportNewPage() {
         <div className="mx-auto max-w-md">
           {!selectedGroupId ? (
             <>
-              <h1 className="mb-4 text-xl font-semibold text-zinc-900">원 선택</h1>
               <p className="mb-4 text-sm text-zinc-600">
                 알림장을 작성할 원을 선택해주세요.
               </p>
