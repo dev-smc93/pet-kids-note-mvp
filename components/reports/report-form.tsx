@@ -36,7 +36,7 @@ interface ReportFormProps {
 }
 
 const MAX_CONTENT = 5000;
-const MIN_PHOTOS = 3;
+const MIN_PHOTOS = 1;
 const MAX_PHOTOS = 10;
 
 export function ReportForm({
@@ -195,6 +195,9 @@ export function ReportForm({
     window.location.href = successRedirect ?? `/groups/${groupId}`;
   };
 
+  const submitButtonStyle =
+    "flex flex-1 items-center justify-center gap-1.5 bg-red-500 py-3 text-sm font-medium text-white transition hover:bg-red-600 disabled:opacity-50";
+
   return (
     <form
       id={formId}
@@ -202,7 +205,19 @@ export function ReportForm({
       className="flex w-full max-w-md flex-col gap-4"
     >
       {isEdit && (
-        <h1 className="text-xl font-semibold text-zinc-900">알림장 수정</h1>
+        <div className="flex overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-sm">
+          <button
+            type="submit"
+            disabled={isLoading}
+            className={submitButtonStyle}
+          >
+            {isLoading ? (
+              <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+            ) : (
+              "저장"
+            )}
+          </button>
+        </div>
       )}
 
       {error && (
@@ -333,7 +348,7 @@ export function ReportForm({
 
       <div className="w-full">
         <label className="mb-1.5 block text-sm font-medium text-zinc-700">
-          사진 (선택, 3~10장)
+          사진 (선택, 1~10장)
         </label>
         <div className="flex flex-wrap gap-2">
           {mediaUrls.map((url, i) => (
@@ -371,7 +386,7 @@ export function ReportForm({
         </p>
       </div>
 
-      {!hideActions && (
+      {!hideActions && !isEdit && (
         <div className="flex gap-3">
           <Link href={backHref} className="flex-1">
             <Button type="button" variant="outline" fullWidth>
@@ -380,7 +395,7 @@ export function ReportForm({
           </Link>
           <div className="flex-1">
             <Button type="submit" fullWidth isLoading={isLoading}>
-              {isEdit ? "저장" : "작성"}
+              작성
             </Button>
           </div>
         </div>

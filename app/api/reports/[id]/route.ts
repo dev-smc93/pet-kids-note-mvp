@@ -90,9 +90,9 @@ export async function PATCH(
 
   if (Array.isArray(mediaUrls)) {
     const urls = mediaUrls.filter((u: unknown) => typeof u === "string" && u.trim());
-    if (urls.length > 0 && (urls.length < 3 || urls.length > MAX_MEDIA)) {
+    if (urls.length > 0 && (urls.length < 1 || urls.length > MAX_MEDIA)) {
       return NextResponse.json(
-        { error: `사진은 3~${MAX_MEDIA}장까지 첨부 가능합니다.` },
+        { error: `사진은 1~${MAX_MEDIA}장까지 첨부 가능합니다.` },
         { status: 400 }
       );
     }

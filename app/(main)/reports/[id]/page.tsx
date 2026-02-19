@@ -361,6 +361,37 @@ export default function ReportDetailPage() {
     );
   }
 
+  const headerActions =
+    profile.role === "ADMIN" ? (
+      <div className="flex items-center gap-1">
+        {!report.readAt && (
+          <button
+            type="button"
+            onClick={handleRemind}
+            className="rounded px-2 py-1.5 text-sm font-medium text-white hover:bg-white/20"
+          >
+            재알림
+          </button>
+        )}
+        <Link
+          href={`/reports/${reportId}/edit`}
+          className="rounded px-2 py-1.5 text-sm font-medium text-white hover:bg-white/20"
+        >
+          수정
+        </Link>
+        <button
+          type="button"
+          onClick={() => setDeleteOpen(true)}
+          disabled={isDeleting}
+          className="rounded px-2 py-1.5 text-sm font-medium text-white hover:bg-white/20 disabled:opacity-50"
+        >
+          삭제
+        </button>
+      </div>
+    ) : (
+      <div className="h-10 w-10" />
+    );
+
   return (
     <div className="flex h-dvh flex-col overflow-hidden bg-zinc-50">
       <header className="sticky top-0 z-10 flex items-center justify-between bg-red-500 px-4 py-3">
@@ -370,7 +401,7 @@ export default function ReportDetailPage() {
           </svg>
         </Link>
         <h1 className="text-lg font-semibold text-white">알림장(상세)</h1>
-        <div className="h-10 w-10" />
+        {headerActions}
       </header>
 
       <main className="flex min-h-0 flex-1 flex-col overflow-hidden px-4 py-6">
@@ -420,29 +451,6 @@ export default function ReportDetailPage() {
                     />
                   </a>
                 ))}
-              </div>
-            )}
-
-            {profile.role === "ADMIN" && (
-              <div className="mt-4 flex gap-2">
-                {!report.readAt && (
-                  <Button variant="outline" size="sm" onClick={handleRemind}>
-                    재알림
-                  </Button>
-                )}
-                <Link href={`/reports/${reportId}/edit`}>
-                  <Button variant="outline" size="sm">
-                    수정
-                  </Button>
-                </Link>
-                <Button
-                  variant="danger"
-                  size="sm"
-                  onClick={() => setDeleteOpen(true)}
-                  disabled={isDeleting}
-                >
-                  삭제
-                </Button>
               </div>
             )}
           </div>
