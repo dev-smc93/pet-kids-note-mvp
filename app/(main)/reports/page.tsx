@@ -48,6 +48,7 @@ export default function ReportsPage() {
       : [];
   const mineOnly = searchParams.get("mineOnly") === "true";
   const [reports, setReports] = useState<ReportItem[]>([]);
+  const [isLoadingReports, setIsLoadingReports] = useState(true);
   const now = new Date();
   const defaultMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
   const [selectedMonth, setSelectedMonth] = useState<string>(defaultMonth);
@@ -58,6 +59,7 @@ export default function ReportsPage() {
       return;
     }
     if (profile) {
+      setIsLoadingReports(true);
       const params = new URLSearchParams();
       if (groupIds.length > 0) params.set("groupIds", groupIds.join(","));
       if (profile.role === "ADMIN" && mineOnly) params.set("mineOnly", "true");
@@ -71,7 +73,10 @@ export default function ReportsPage() {
             setSelectedMonth((prev) => (months.includes(prev) ? prev : months[0]));
           }
         })
-        .catch(() => setReports([]));
+        .catch(() => setReports([]))
+        .finally(() => setIsLoadingReports(false));
+    } else {
+      setIsLoadingReports(false);
     }
   }, [profile, isLoading, router, groupIds.join(","), mineOnly]);
 
@@ -91,6 +96,34 @@ export default function ReportsPage() {
   }
 
   if (!profile) return null;
+
+  if (isLoadingReports) {
+    return (
+      <div className="flex min-h-screen flex-col bg-white">
+        <header className="sticky top-0 z-10 flex items-center justify-between bg-red-500 px-4 py-3">
+          <Link href="/" className="flex h-10 w-10 items-center justify-center text-white">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </Link>
+          <h1 className="text-lg font-semibold text-white">알림장(목록)</h1>
+          <Link
+            href="/reports/filter"
+            className="flex h-10 w-10 items-center justify-center rounded border-2 border-red-400 text-white"
+            aria-label="필터"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+            </svg>
+          </Link>
+        </header>
+        <main className="flex flex-1 items-center justify-center bg-zinc-50">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-zinc-300 border-t-zinc-900" />
+        </main>
+      </div>
+    );
+  }
 
   const hasReportsInOtherMonths = reports.length > 0 && filteredReports.length === 0;
   const emptyMessage = hasReportsInOtherMonths

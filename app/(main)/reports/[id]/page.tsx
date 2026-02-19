@@ -38,6 +38,7 @@ export default function ReportDetailPage() {
   const { profile, isLoading } = useAuth();
   const router = useRouter();
   const [report, setReport] = useState<ReportDetail | null>(null);
+  const [isLoadingReport, setIsLoadingReport] = useState(true);
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -77,10 +78,18 @@ export default function ReportDetailPage() {
   const formatScheduleLabel = (d: Date) =>
     `${d.getMonth() + 1}월 ${d.getDate()}일 ${d.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" })}`;
 
-  const fetchReport = () => {
+  const fetchReport = (isRefetch = false) => {
+    if (!isRefetch) setIsLoadingReport(true);
     fetch(`/api/reports/${reportId}`)
       .then((res) => (res.ok ? res.json() : null))
-      .then(setReport);
+      .then((data) => {
+        setReport(data);
+        setIsLoadingReport(false);
+      })
+      .catch(() => {
+        setReport(null);
+        setIsLoadingReport(false);
+      });
   };
 
   const fetchComments = () => {
@@ -122,7 +131,7 @@ export default function ReportDetailPage() {
   useEffect(() => {
     if (report && profile?.role === "GUARDIAN" && !report.isRead) {
       fetch(`/api/reports/${reportId}/read`, { method: "POST" }).then(() => {
-        fetchReport();
+        fetchReport(true);
       });
     }
   }, [report?.id, report?.isRead, profile?.role, reportId]);
@@ -308,6 +317,25 @@ export default function ReportDetailPage() {
   };
 
   if (isLoading || !profile) return null;
+
+  if (isLoadingReport) {
+    return (
+      <div className="flex h-dvh flex-col bg-zinc-50">
+        <header className="sticky top-0 z-10 flex items-center justify-between bg-red-500 px-4 py-3">
+          <Link href="/reports" className="flex h-10 w-10 items-center justify-center text-white">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="m15 18-6-6 6-6" />
+            </svg>
+          </Link>
+          <h1 className="text-lg font-semibold text-white">알림장(상세)</h1>
+          <div className="h-10 w-10" />
+        </header>
+        <main className="flex flex-1 items-center justify-center px-4 py-6">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-zinc-300 border-t-zinc-900" />
+        </main>
+      </div>
+    );
+  }
 
   if (!report) {
     return (
