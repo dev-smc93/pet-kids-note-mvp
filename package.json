@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "db:seed": "prisma db seed",
+    "db:reset": "tsx scripts/reset-db.ts",
     "db:delete-a-group": "tsx scripts/delete-a-group.ts"
   },
   "dependencies": {

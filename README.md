@@ -178,9 +178,11 @@ npm run dev
 
 Supabase Auth 연동 후, 테스트용 시드 데이터를 넣을 수 있습니다.
 
-1. Supabase 대시보드에서 테스트 계정 2개 생성 (Authentication > Users)
-2. 관리자 계정의 `user_id` (UUID) 복사 → `.env`에 `SEED_USER_ID="..."` 추가
-3. 보호자 계정의 `user_id` (UUID) 복사 → `.env`에 `SEED_GUARDIAN_USER_ID="..."` 추가
+1. Supabase 대시보드에서 테스트 계정 생성 (Authentication > Users)
+2. 관리자 계정의 `user_id` (UUID) 복사 → `.env`에 `SEED_USER_ID="..."` 추가 (여러 명: 콤마 구분)
+3. 보호자 계정의 `user_id` (UUID) 복사 → `.env`에 `SEED_GUARDIAN_USER_ID="..."` 추가 (여러 명: 콤마 구분)
 4. `npm run db:seed` 실행
+
+**DB 초기화 (Supabase)**: `prisma migrate reset`은 Supabase에서 동작하지 않습니다. Supabase SQL Editor에서 `prisma/reset-data.sql` 내용을 실행하여 테이블 TRUNCATE 후, `npm run db:seed` 실행
 
 시드 내용: Profile(관리자) → Group(해피펫 유치원) / Profile(보호자) → Pet(초코) → Membership(승인됨) → Report(알림장)
