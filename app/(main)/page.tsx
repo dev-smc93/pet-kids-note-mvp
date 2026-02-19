@@ -9,6 +9,7 @@ import { MainHeader } from "@/components/layout/main-header";
 export default function HomePage() {
   const { user, profile } = useAuth();
   const [groupCount, setGroupCount] = useState<number | null>(null);
+  const [unreadReportCount, setUnreadReportCount] = useState<number>(0);
 
   useEffect(() => {
     if (profile?.role === "ADMIN") {
@@ -16,6 +17,15 @@ export default function HomePage() {
         .then((res) => (res.ok ? res.json() : []))
         .then((data) => setGroupCount(Array.isArray(data) ? data.length : 0))
         .catch(() => setGroupCount(0));
+    }
+  }, [profile?.role]);
+
+  useEffect(() => {
+    if (profile?.role === "GUARDIAN") {
+      fetch("/api/reports/unread-count")
+        .then((res) => (res.ok ? res.json() : { count: 0 }))
+        .then((data) => setUnreadReportCount(data.count ?? 0))
+        .catch(() => setUnreadReportCount(0));
     }
   }, [profile?.role]);
 
@@ -81,11 +91,16 @@ export default function HomePage() {
                     </div>
                   </Link>
                   <Link href="/reports" className="block">
-                    <div className="rounded-lg bg-white p-4 shadow-sm transition hover:bg-zinc-50">
+                    <div className="relative rounded-lg bg-white p-4 shadow-sm transition hover:bg-zinc-50">
                       <h2 className="font-medium text-zinc-900">알림장</h2>
                       <p className="text-sm text-zinc-500">
                         원에서 받은 돌봄 알림
                       </p>
+                      {unreadReportCount > 0 && (
+                        <span className="absolute right-4 top-4 flex h-6 min-w-6 items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-medium text-white">
+                          {unreadReportCount > 99 ? "99+" : unreadReportCount}
+                        </span>
+                      )}
                     </div>
                   </Link>
                 </div>
