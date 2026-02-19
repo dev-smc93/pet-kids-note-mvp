@@ -21,6 +21,7 @@ interface ReportDetail {
   pet: { id: string; name: string; photoUrl: string | null };
   author: { name: string };
   media: { id: string; url: string }[];
+  isGuardianPost?: boolean;
   isRead?: boolean;
   readAt?: string | null;
   dailyRecord?: {
@@ -410,7 +411,7 @@ export default function ReportDetailPage() {
   const headerActions =
     profile.role === "ADMIN" ? (
       <div className="flex items-center gap-1">
-        {!report.readAt && (
+        {!report.readAt && !report.isGuardianPost && (
           <button
             type="button"
             onClick={handleRemind}
@@ -419,20 +420,24 @@ export default function ReportDetailPage() {
             재알림
           </button>
         )}
-        <Link
-          href={`/reports/${reportId}/edit`}
-          className="rounded px-2 py-1.5 text-sm font-medium text-white hover:bg-white/20"
-        >
-          수정
-        </Link>
-        <button
-          type="button"
-          onClick={() => setDeleteOpen(true)}
-          disabled={isDeleting}
-          className="rounded px-2 py-1.5 text-sm font-medium text-white hover:bg-white/20 disabled:opacity-50"
-        >
-          삭제
-        </button>
+        {!report.isGuardianPost && (
+          <>
+            <Link
+              href={`/reports/${reportId}/edit`}
+              className="rounded px-2 py-1.5 text-sm font-medium text-white hover:bg-white/20"
+            >
+              수정
+            </Link>
+            <button
+              type="button"
+              onClick={() => setDeleteOpen(true)}
+              disabled={isDeleting}
+              className="rounded px-2 py-1.5 text-sm font-medium text-white hover:bg-white/20 disabled:opacity-50"
+            >
+              삭제
+            </button>
+          </>
+        )}
       </div>
     ) : (
       <div className="h-10 w-10" />
@@ -470,7 +475,10 @@ export default function ReportDetailPage() {
                 <div className="min-w-0 flex-1">
                   <h2 className="font-semibold text-zinc-900">{report.pet.name}</h2>
                   <p className="text-sm text-zinc-500">
-                    {report.author.name} · {new Date(report.createdAt).toLocaleString("ko-KR")}
+                    {report.author.name}
+                    {report.isGuardianPost && " · 보호자의 글"}
+                    {" · "}
+                    {new Date(report.createdAt).toLocaleString("ko-KR")}
                   </p>
                   {profile.role === "GUARDIAN" && report.readAt && (
                     <p className="mt-1 text-xs text-zinc-400">

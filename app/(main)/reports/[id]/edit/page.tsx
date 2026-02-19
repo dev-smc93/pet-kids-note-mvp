@@ -11,6 +11,7 @@ interface ReportData {
   content: string;
   pet: { id: string; name: string };
   media: { id: string; url: string }[];
+  isGuardianPost?: boolean;
   dailyRecord?: {
     mood?: string;
     health?: string;
@@ -39,6 +40,10 @@ export default function ReportEditPage() {
       fetch(`/api/reports/${reportId}`)
         .then((res) => (res.ok ? res.json() : null))
         .then((data) => {
+          if (data?.isGuardianPost) {
+            router.replace(`/reports/${reportId}`);
+            return;
+          }
           setReport(data);
           setIsLoadingReport(false);
         })

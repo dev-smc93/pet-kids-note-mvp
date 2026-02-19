@@ -24,6 +24,7 @@ export async function GET() {
   const count = await prisma.report.count({
     where: {
       petId: { in: petIds },
+      authorUserId: { not: profile!.userId },
       reportReads: {
         none: { userId: profile!.userId },
       },

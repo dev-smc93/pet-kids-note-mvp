@@ -315,7 +315,7 @@ export default function ReportsPage() {
                                 새 알림
                               </span>
                             )}
-                            {profile.role === "ADMIN" && r.isReadByGuardian === false && (
+                            {profile.role === "ADMIN" && r.isReadByGuardian === false && !r.isGuardianPost && (
                               <span className="inline-flex items-center gap-1 text-xs text-zinc-400">
                                 <svg
                                   xmlns="http://www.w3.org/2000/svg"

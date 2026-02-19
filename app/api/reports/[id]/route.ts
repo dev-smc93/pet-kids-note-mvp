@@ -74,9 +74,11 @@ export async function GET(
 
   const guardianRead = report.reportReads.find((r) => r.userId === report.pet.ownerUserId);
   const adminRead = report.reportReads.find((r) => r.userId === profile!.userId);
+  const isGuardianPost = report.authorUserId === report.pet.ownerUserId;
   const { reportReads, ...rest } = report;
   return NextResponse.json({
     ...rest,
+    isGuardianPost,
     isRead:
       profile!.role === "GUARDIAN"
         ? !!guardianRead
@@ -105,6 +107,12 @@ export async function PATCH(
   const report = await getReportWithAuth(id, profile!);
   if (!report) {
     return NextResponse.json({ error: "알림장을 찾을 수 없습니다." }, { status: 404 });
+  }
+  if (report.authorUserId === report.pet.ownerUserId) {
+    return NextResponse.json(
+      { error: "보호자가 작성한 글은 수정할 수 없습니다." },
+      { status: 403 }
+    );
   }
 
   const body = await request.json();
@@ -179,6 +187,12 @@ export async function DELETE(
   const report = await getReportWithAuth(id, profile!);
   if (!report) {
     return NextResponse.json({ error: "알림장을 찾을 수 없습니다." }, { status: 404 });
+  }
+  if (report.authorUserId === report.pet.ownerUserId) {
+    return NextResponse.json(
+      { error: "보호자가 작성한 글은 삭제할 수 없습니다." },
+      { status: 403 }
+    );
   }
 
   await prisma.report.delete({ where: { id } });
