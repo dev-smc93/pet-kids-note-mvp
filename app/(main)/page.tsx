@@ -61,14 +61,6 @@ export default function HomePage() {
 
               {profile.role === "ADMIN" && (
                 <div className="space-y-3">
-                  <Link href="/groups" className="block">
-                    <div className="rounded-lg bg-white p-4 shadow-sm transition hover:bg-zinc-50">
-                      <h2 className="font-medium text-zinc-900">원 관리</h2>
-                      <p className="text-sm text-zinc-500">
-                        원 생성, 연결 승인/거절
-                      </p>
-                    </div>
-                  </Link>
                   <Link href="/reports" className="block">
                     <div className="rounded-lg bg-white p-4 shadow-sm transition hover:bg-zinc-50">
                       <h2 className="font-medium text-zinc-900">알림장</h2>
@@ -77,19 +69,19 @@ export default function HomePage() {
                       </p>
                     </div>
                   </Link>
+                  <Link href="/groups" className="block">
+                    <div className="rounded-lg bg-white p-4 shadow-sm transition hover:bg-zinc-50">
+                      <h2 className="font-medium text-zinc-900">원 관리</h2>
+                      <p className="text-sm text-zinc-500">
+                        원 생성, 연결 승인/거절
+                      </p>
+                    </div>
+                  </Link>
                 </div>
               )}
 
               {profile.role === "GUARDIAN" && (
                 <div className="space-y-3">
-                  <Link href="/my-pets" className="block">
-                    <div className="rounded-lg bg-white p-4 shadow-sm transition hover:bg-zinc-50">
-                      <h2 className="font-medium text-zinc-900">내 반려동물</h2>
-                      <p className="text-sm text-zinc-500">
-                        반려동물 등록, 연결된 원 목록
-                      </p>
-                    </div>
-                  </Link>
                   <Link href="/reports" className="block">
                     <div className="relative rounded-lg bg-white p-4 shadow-sm transition hover:bg-zinc-50">
                       <h2 className="font-medium text-zinc-900">알림장</h2>
@@ -101,6 +93,14 @@ export default function HomePage() {
                           {unreadReportCount > 99 ? "99+" : unreadReportCount}
                         </span>
                       )}
+                    </div>
+                  </Link>
+                  <Link href="/my-pets" className="block">
+                    <div className="rounded-lg bg-white p-4 shadow-sm transition hover:bg-zinc-50">
+                      <h2 className="font-medium text-zinc-900">내 반려동물</h2>
+                      <p className="text-sm text-zinc-500">
+                        반려동물 등록, 연결된 원 목록
+                      </p>
                     </div>
                   </Link>
                 </div>

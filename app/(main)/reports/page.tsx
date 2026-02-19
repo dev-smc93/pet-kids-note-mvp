@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth/auth-context";
 
@@ -14,7 +14,17 @@ interface ReportItem {
   isRead?: boolean;
   readAt?: string | null;
   commentCount?: number;
+  /** 관리자용: 보호자 읽음 여부 */
+  isReadByGuardian?: boolean;
+  /** 관리자용: 보호자 이름 */
+  guardianName?: string;
+  /** 관리자용: 알림장 작성한 원 명칭 */
+  groupName?: string | null;
+  /** 목록 썸네일 (첫 번째 미디어) */
+  thumbnailUrl?: string | null;
 }
+
+const DAY_NAMES = ["일요일", "월요일", "화요일", "수요일", "목요일", "금요일", "토요일"];
 
 function getMonthsFromReports(reports: ReportItem[]) {
   const set = new Set<string>();
@@ -28,6 +38,15 @@ function getMonthsFromReports(reports: ReportItem[]) {
 export default function ReportsPage() {
   const { profile, isLoading } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const groupIdsParam = searchParams.get("groupIds");
+  const groupIdParam = searchParams.get("groupId");
+  const groupIds = groupIdsParam
+    ? groupIdsParam.split(",").filter(Boolean)
+    : groupIdParam
+      ? [groupIdParam]
+      : [];
+  const mineOnly = searchParams.get("mineOnly") === "true";
   const [reports, setReports] = useState<ReportItem[]>([]);
   const now = new Date();
   const defaultMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
@@ -39,7 +58,11 @@ export default function ReportsPage() {
       return;
     }
     if (profile) {
-      fetch("/api/reports")
+      const params = new URLSearchParams();
+      if (groupIds.length > 0) params.set("groupIds", groupIds.join(","));
+      if (profile.role === "ADMIN" && mineOnly) params.set("mineOnly", "true");
+      const url = `/api/reports${params.toString() ? `?${params.toString()}` : ""}`;
+      fetch(url)
         .then((res) => (res.ok ? res.json() : []))
         .then((data: ReportItem[]) => {
           setReports(data);
@@ -50,7 +73,7 @@ export default function ReportsPage() {
         })
         .catch(() => setReports([]));
     }
-  }, [profile, isLoading, router]);
+  }, [profile, isLoading, router, groupIds.join(","), mineOnly]);
 
   const months = getMonthsFromReports(reports);
   const [year, month] = selectedMonth ? selectedMonth.split("-").map(Number) : [new Date().getFullYear(), new Date().getMonth() + 1];
@@ -96,11 +119,18 @@ export default function ReportsPage() {
             <line x1="6" y1="6" x2="18" y2="18" />
           </svg>
         </Link>
-        <h1 className="text-lg font-semibold text-white">알림장</h1>
-        <button
-          type="button"
+        <h1 className="text-lg font-semibold text-white">알림장(목록)</h1>
+        <Link
+          href={
+            groupIds.length > 0 || mineOnly
+              ? `/reports/filter?${new URLSearchParams({
+                  ...(groupIds.length > 0 ? { groupIds: groupIds.join(",") } : {}),
+                  ...(mineOnly ? { mineOnly: "true" } : {}),
+                }).toString()}`
+              : "/reports/filter"
+          }
           className="flex h-10 w-10 items-center justify-center rounded border-2 border-red-400 text-white"
-          aria-label="정렬"
+          aria-label="필터"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -110,11 +140,12 @@ export default function ReportsPage() {
             fill="none"
             stroke="currentColor"
             strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
           >
-            <path d="m7 15 5 5 5-5" />
-            <path d="m7 9 5-5 5 5" />
+            <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
           </svg>
-        </button>
+        </Link>
       </header>
 
       <main className="flex-1 bg-zinc-50 px-4 py-4">
@@ -171,48 +202,77 @@ export default function ReportsPage() {
             </div>
           ) : (
             <ul className="space-y-3">
-              {filteredReports.map((r) => (
-                <li key={r.id}>
-                  <Link href={`/reports/${r.id}`}>
-                    <div
-                      className={`rounded-lg bg-white p-4 shadow-sm transition hover:bg-zinc-50 ${
-                        profile.role === "GUARDIAN" && !r.isRead ? "border-l-4 border-amber-500" : ""
-                      }`}
-                    >
-                      <div className="flex items-start gap-3">
-                        {r.pet.photoUrl ? (
-                          <img
-                            src={r.pet.photoUrl}
-                            alt={r.pet.name}
-                            className="h-12 w-12 rounded-full object-cover"
-                          />
-                        ) : (
-                          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-zinc-200 text-xl">
-                            🐾
-                          </div>
-                        )}
+              {filteredReports.map((r) => {
+                const d = new Date(r.createdAt);
+                const dateNum = d.getDate();
+                const dayName = DAY_NAMES[d.getDay()];
+                return (
+                  <li key={r.id}>
+                    <Link href={`/reports/${r.id}`}>
+                      <div
+                        className={`flex gap-4 rounded-lg bg-white p-4 shadow-sm transition hover:bg-zinc-50 ${
+                          profile.role === "GUARDIAN" && !r.isRead ? "border-l-4 border-amber-500" : ""
+                        }`}
+                      >
+                        {/* 좌측: 날짜, 요일 */}
+                        <div className="flex shrink-0 flex-col items-center border-r border-zinc-100 pr-4">
+                          <span className="text-2xl font-semibold text-zinc-400">{dateNum}</span>
+                          <span className="text-xs text-zinc-400">{dayName}</span>
+                        </div>
+                        {/* 우측: 수신자, 내용, 미수신, 썸네일 */}
                         <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium text-zinc-900">{r.pet.name}</span>
+                          <p className="text-sm font-medium text-zinc-900">
+                            {r.groupName && `${r.groupName} · `}
+                            {r.pet.name}
+                            {profile.role === "ADMIN" && r.guardianName && ` | ${r.guardianName}`}
+                          </p>
+                          <p className="mt-0.5 line-clamp-2 text-sm text-zinc-600">{r.content}</p>
+                          <div className="mt-1.5 flex items-center gap-2">
                             {profile.role === "GUARDIAN" && !r.isRead && (
                               <span className="rounded bg-amber-100 px-1.5 py-0.5 text-xs text-amber-800">
                                 새 알림
                               </span>
                             )}
-                          </div>
-                          <p className="mt-0.5 line-clamp-2 text-sm text-zinc-600">{r.content}</p>
-                          <p className="mt-1 text-xs text-zinc-400">
-                            {r.author.name} · {new Date(r.createdAt).toLocaleDateString("ko-KR")}
-                            {r.commentCount !== undefined && r.commentCount > 0 && (
-                              <> · 댓글 {r.commentCount}개</>
+                            {profile.role === "ADMIN" && r.isReadByGuardian === false && (
+                              <span className="inline-flex items-center gap-1 text-xs text-zinc-400">
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  width="14"
+                                  height="14"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="2"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  className="shrink-0"
+                                >
+                                  <rect width="20" height="16" x="2" y="4" rx="2" />
+                                  <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+                                </svg>
+                                미수신
+                              </span>
                             )}
-                          </p>
+                            {r.commentCount !== undefined && r.commentCount > 0 && (
+                              <span className="text-xs text-zinc-400">댓글 {r.commentCount}개</span>
+                            )}
+                          </div>
                         </div>
+                        {/* 썸네일 */}
+                        {r.thumbnailUrl && (
+                          <div className="h-14 w-14 shrink-0 overflow-hidden rounded-lg">
+                            <img
+                              src={r.thumbnailUrl}
+                              alt=""
+                              className="h-full w-full object-cover"
+                            />
+                          </div>
+                        )}
                       </div>
-                    </div>
-                  </Link>
-                </li>
-              ))}
+                    </Link>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </div>

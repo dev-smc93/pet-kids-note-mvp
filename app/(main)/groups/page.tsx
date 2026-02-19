@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth/auth-context";
 import { GroupList } from "@/components/groups/group-list";
-import { Button } from "@/components/ui/button";
 import { MainHeader } from "@/components/layout/main-header";
 
 export default function GroupsPage() {
@@ -32,15 +31,35 @@ export default function GroupsPage() {
 
       <main className="flex-1 px-4 py-6">
         <div className="mx-auto max-w-md">
-          <div className="mb-4 flex items-center justify-between">
-            <h1 className="text-xl font-semibold text-zinc-900">내 원</h1>
-            <Link href="/groups/new">
-              <Button>원 등록하기</Button>
-            </Link>
+          <div className="mb-4">
+            <p className="text-sm text-zinc-500">
+              원을 등록하고 연결 요청을 관리하세요.
+            </p>
           </div>
           <GroupList />
         </div>
       </main>
+
+      <Link
+        href="/groups/new"
+        className="fixed bottom-6 right-6 flex h-14 w-14 items-center justify-center rounded-full bg-red-500 text-white shadow-lg transition hover:bg-red-600 active:scale-95"
+        aria-label="원 등록"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M5 12h14" />
+          <path d="M12 5v14" />
+        </svg>
+      </Link>
     </div>
   );
 }

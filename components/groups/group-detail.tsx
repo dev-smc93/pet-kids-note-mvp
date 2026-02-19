@@ -125,8 +125,8 @@ export function GroupDetail({ groupId }: { groupId: string }) {
                     </div>
                   )}
                   <div>
-                    <p className="font-medium">{m.pet.name}</p>
-                    <p className="text-xs text-zinc-500">{m.user.name} (보호자)</p>
+                    <p className="font-medium text-zinc-900">{m.pet.name}</p>
+                    <p className="text-xs text-zinc-600">{m.user.name} (보호자)</p>
                   </div>
                 </div>
                 <div className="flex gap-2">
@@ -173,8 +173,8 @@ export function GroupDetail({ groupId }: { groupId: string }) {
                   </div>
                 )}
                 <div>
-                  <p className="font-medium">{m.pet.name}</p>
-                  <p className="text-xs text-zinc-500">{m.user.name}</p>
+                  <p className="font-medium text-zinc-900">{m.pet.name}</p>
+                  <p className="text-xs text-zinc-600">{m.user.name}</p>
                 </div>
               </li>
             ))}

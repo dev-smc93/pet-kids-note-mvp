@@ -12,7 +12,14 @@ export async function GET(request: Request) {
 
   const { searchParams } = new URL(request.url);
   const petId = searchParams.get("petId");
-  const groupId = searchParams.get("groupId");
+  const groupIdParam = searchParams.get("groupId");
+  const groupIdsParam = searchParams.get("groupIds");
+  const filterGroupIds = groupIdsParam
+    ? groupIdsParam.split(",").filter(Boolean)
+    : groupIdParam
+      ? [groupIdParam]
+      : [];
+  const mineOnly = searchParams.get("mineOnly") === "true";
 
   if (profile!.role === "GUARDIAN") {
     const pets = await prisma.pet.findMany({
@@ -27,25 +34,41 @@ export async function GET(request: Request) {
     const reports = await prisma.report.findMany({
       where: petId ? { petId, pet: { ownerUserId: profile!.userId } } : { petId: { in: petIds } },
       include: {
-        pet: { select: { id: true, name: true, photoUrl: true } },
+        pet: {
+          include: {
+            memberships: {
+              where: { status: "APPROVED" },
+              include: { group: { select: { id: true, name: true, ownerUserId: true } } },
+            },
+          },
+        },
         author: { select: { name: true } },
         reportReads: { where: { userId: profile!.userId }, select: { readAt: true } },
+        media: { take: 1, select: { url: true } },
         _count: { select: { reportComments: true } },
       },
       orderBy: { createdAt: "desc" },
     });
 
-    return NextResponse.json(
-      reports.map((r) => {
-        const { reportReads, _count, ...rest } = r;
-        return {
-          ...rest,
-          isRead: reportReads.length > 0,
-          readAt: reportReads[0]?.readAt ?? null,
-          commentCount: _count.reportComments,
-        };
-      })
-    );
+    const mapped = reports.map((r) => {
+      const { reportReads, media, pet, _count, authorUserId, ...rest } = r;
+      const group = pet.memberships.find((m) => m.group.ownerUserId === authorUserId)?.group;
+      return {
+        ...rest,
+        pet: { id: pet.id, name: pet.name, photoUrl: pet.photoUrl },
+        isRead: reportReads.length > 0,
+        readAt: reportReads[0]?.readAt ?? null,
+        commentCount: _count.reportComments,
+        thumbnailUrl: media[0]?.url ?? null,
+        groupName: group?.name ?? null,
+        groupId: group?.id ?? null,
+      };
+    });
+    const filtered =
+      filterGroupIds.length > 0
+        ? mapped.filter((r) => r.groupId && filterGroupIds.includes(r.groupId))
+        : mapped;
+    return NextResponse.json(filtered);
   }
 
   // ADMIN
@@ -56,14 +79,19 @@ export async function GET(request: Request) {
     where: { ownerUserId: adminProfile!.userId },
     select: { id: true },
   });
-  const groupIds = groups.map((g) => g.id);
-  if (groupIds.length === 0) {
+  const adminGroupIds = groups.map((g) => g.id);
+  if (adminGroupIds.length === 0) {
     return NextResponse.json([]);
   }
 
+  const membershipGroupIds =
+    filterGroupIds.length > 0
+      ? filterGroupIds.filter((id) => adminGroupIds.includes(id))
+      : adminGroupIds;
+
   const memberships = await prisma.membership.findMany({
     where: {
-      groupId: groupId ? groupId : { in: groupIds },
+      groupId: { in: membershipGroupIds },
       status: "APPROVED",
     },
     select: { petId: true },
@@ -79,11 +107,23 @@ export async function GET(request: Request) {
   }
 
   const reports = await prisma.report.findMany({
-    where: { petId: { in: filterPetIds } },
+    where: {
+      petId: { in: filterPetIds },
+      ...(mineOnly ? { authorUserId: adminProfile!.userId } : {}),
+    },
     include: {
-      pet: { select: { id: true, name: true, photoUrl: true } },
+      pet: {
+        include: {
+          owner: { select: { name: true } },
+          memberships: {
+            where: { status: "APPROVED" },
+            include: { group: { select: { id: true, name: true, ownerUserId: true } } },
+          },
+        },
+      },
       author: { select: { name: true } },
       reportReads: true,
+      media: { take: 1, select: { url: true } },
       _count: { select: { reportComments: true } },
     },
     orderBy: { createdAt: "desc" },
@@ -91,8 +131,20 @@ export async function GET(request: Request) {
 
   return NextResponse.json(
     reports.map((r) => {
-      const { _count, ...rest } = r;
-      return { ...rest, commentCount: _count.reportComments };
+      const { _count, reportReads, pet, media, authorUserId, ...rest } = r;
+      const guardianUserId = pet.ownerUserId;
+      const isReadByGuardian = reportReads.some((rr) => rr.userId === guardianUserId);
+      const group = pet.memberships.find((m) => m.group.ownerUserId === authorUserId)?.group;
+      return {
+        ...rest,
+        pet: { id: pet.id, name: pet.name, photoUrl: pet.photoUrl },
+        guardianName: pet.owner.name,
+        groupName: group?.name ?? null,
+        groupId: group?.id ?? null,
+        commentCount: _count.reportComments,
+        isReadByGuardian,
+        thumbnailUrl: media[0]?.url ?? null,
+      };
     })
   );
 }

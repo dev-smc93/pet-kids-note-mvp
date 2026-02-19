@@ -92,14 +92,6 @@ export function MyPetsList() {
   return (
     <div className="space-y-6">
       <section>
-        <div className="mb-3 flex justify-end">
-          <Link
-            href="/my-pets/pets/new"
-            className="text-sm font-medium text-zinc-900 underline"
-          >
-            + 등록
-          </Link>
-        </div>
         {pets.length === 0 ? (
           <div className="rounded-lg bg-white p-6 text-center shadow-sm">
             <p className="text-zinc-600">등록된 반려동물이 없습니다.</p>

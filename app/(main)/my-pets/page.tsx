@@ -39,6 +39,27 @@ export default function MyPetsPage() {
           <MyPetsList />
         </div>
       </main>
+
+      <Link
+        href="/my-pets/pets/new"
+        className="fixed bottom-6 right-6 flex h-14 w-14 items-center justify-center rounded-full bg-red-500 text-white shadow-lg transition hover:bg-red-600 active:scale-95"
+        aria-label="반려동물 등록"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M5 12h14" />
+          <path d="M12 5v14" />
+        </svg>
+      </Link>
     </div>
   );
 }
