@@ -128,12 +128,13 @@ model ReportMedia {
 
 // report_comments - 알림장 댓글 (관리자 ↔ 보호자 간 대화)
 model ReportComment {
-  id           String   @id @default(uuid())
-  reportId     String   @map("report_id")
-  authorUserId String   @map("author_user_id")
-  content      String   @db.Text
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
+  id           String    @id @default(uuid())
+  reportId     String    @map("report_id")
+  authorUserId String    @map("author_user_id")
+  content      String    @db.Text
+  scheduledAt  DateTime? @map("scheduled_at")  // 예약 전송 시각 (null이면 즉시 전송)
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
 
   report Report  @relation(fields: [reportId], references: [id], onDelete: Cascade)
   author Profile @relation("ReportCommentAuthor", fields: [authorUserId], references: [userId], onDelete: Cascade)

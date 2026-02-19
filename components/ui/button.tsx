@@ -2,6 +2,7 @@ import { forwardRef } from "react";
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: "primary" | "secondary" | "outline" | "ghost" | "danger";
+  size?: "sm" | "md";
   isLoading?: boolean;
   fullWidth?: boolean;
 }
@@ -23,6 +24,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   (
     {
       variant = "primary",
+      size = "md",
       isLoading = false,
       fullWidth = false,
       className = "",
@@ -31,11 +33,13 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       ...props
     },
     ref
-  ) => (
+  ) => {
+    const sizeStyles = size === "sm" ? "px-3 py-1.5 text-sm" : "px-4 py-3 text-base";
+    return (
     <button
       ref={ref}
       disabled={disabled || isLoading}
-      className={`inline-flex items-center justify-center rounded-lg px-4 py-3 text-base font-medium transition-colors disabled:opacity-50 ${variantStyles[variant]} ${fullWidth ? "w-full" : ""} ${className}`}
+      className={`inline-flex items-center justify-center rounded-lg font-medium transition-colors disabled:opacity-50 ${variantStyles[variant]} ${sizeStyles} ${fullWidth ? "w-full" : ""} ${className}`}
       {...props}
     >
       {isLoading ? (
@@ -44,7 +48,8 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         children
       )}
     </button>
-  )
+  );
+  }
 );
 
 Button.displayName = "Button";

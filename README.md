@@ -83,16 +83,16 @@ report_comments(id, report_id, author_user_id, content, created_at, updated_at) 
 
 ### C. 알림장 (핵심)
 
-- [ ] 관리자: 알림장 작성
-  - [ ] 필수: 내용 (최대 5,000자)
-  - [ ] 선택: 사진 첨부 (3~10장 제한)
-  - [ ] 대상: 반 또는 반려동물(개별) 중 선택 (MVP에선 개별만 해도 충분)
-- [ ] 보호자: 알림장 목록 조회
-- [ ] 보호자: 알림장 상세 조회
-- [ ] 읽음 처리: 열람 여부 표시 (미열람/열람)
-- [ ] 재알림(재전송): 미열람 사용자에게 다시 알림 (초기엔 "표시/버튼"까지만)
-- [ ] 수정/삭제: 관리자만 가능
-- [ ] **관리자 & 보호자 간 댓글 기능** (알림장 단위로 대화)
+- [x] 관리자: 알림장 작성
+  - [x] 필수: 내용 (최대 5,000자)
+  - [x] 선택: 사진 첨부 (3~10장 제한)
+  - [x] 대상: 반 또는 반려동물(개별) 중 선택 (MVP에선 개별만 해도 충분)
+- [x] 보호자: 알림장 목록 조회
+- [x] 보호자: 알림장 상세 조회
+- [x] 읽음 처리: 열람 여부 표시 (미열람/열람)
+- [x] 재알림(재전송): 미열람 사용자에게 다시 알림 (초기엔 "표시/버튼"까지만)
+- [x] 수정/삭제: 관리자만 가능
+- [x] **관리자 & 보호자 간 댓글 기능** (알림장 단위로 대화)
 
 ### D. 간소화 알림장 모드 (선택)
 
@@ -142,7 +142,8 @@ Vercel 배포 완료 후 적용 가능
 ## Getting Started
 
 1. `.env`에 Supabase 관련 변수 추가 (`.env.example` 참고)
-2. `npm run dev` 실행
+2. `npx prisma generate` 실행 (Prisma 클라이언트 생성)
+3. `npm run dev` 실행
 3. [http://localhost:3000](http://localhost:3000) 접속
 
 ```bash
@@ -151,6 +152,14 @@ npm run dev
 
 **프로젝트 구조**  
 → [doc/프론트&백구조.md](./doc/프론트&백구조.md)
+
+**알림장 테스트 시나리오**  
+→ [doc/테스트시나리오_알림장.md](./doc/테스트시나리오_알림장.md)
+
+**Supabase Storage**: 알림장 사진 업로드 시 `report-photos` 버킷 필요 (Storage > New bucket > Public)
+
+**Supabase Realtime**: 알림장 댓글 실시간 반영을 위해 `report_comments` 테이블을 Realtime publication에 추가해야 합니다.  
+→ Supabase 대시보드 > Database > Publications > `supabase_realtime`에서 `report_comments` 체크, 또는 `supabase/enable_realtime_report_comments.sql` 실행
 
 ---
 

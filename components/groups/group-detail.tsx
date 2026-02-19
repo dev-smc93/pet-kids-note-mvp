@@ -151,7 +151,16 @@ export function GroupDetail({ groupId }: { groupId: string }) {
       )}
 
       <div className="rounded-lg bg-white p-4 shadow-sm">
-        <h3 className="font-medium text-zinc-900">연결된 반려동물 ({approved.length})</h3>
+        <div className="flex items-center justify-between">
+          <h3 className="font-medium text-zinc-900">연결된 반려동물 ({approved.length})</h3>
+          {approved.length > 0 && (
+            <Link href={`/groups/${groupId}/reports/new`}>
+              <Button variant="primary" size="sm">
+                알림장 작성
+              </Button>
+            </Link>
+          )}
+        </div>
         {approved.length === 0 ? (
           <p className="mt-2 text-sm text-zinc-500">연결된 반려동물이 없습니다.</p>
         ) : (

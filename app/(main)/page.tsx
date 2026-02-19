@@ -59,6 +59,14 @@ export default function HomePage() {
                       </p>
                     </div>
                   </Link>
+                  <Link href="/reports" className="block">
+                    <div className="rounded-lg bg-white p-4 shadow-sm transition hover:bg-zinc-50">
+                      <h2 className="font-medium text-zinc-900">알림장</h2>
+                      <p className="text-sm text-zinc-500">
+                        작성한 알림장 목록
+                      </p>
+                    </div>
+                  </Link>
                 </div>
               )}
 
@@ -69,6 +77,14 @@ export default function HomePage() {
                       <h2 className="font-medium text-zinc-900">내 반려동물</h2>
                       <p className="text-sm text-zinc-500">
                         반려동물 등록, 연결된 원 목록
+                      </p>
+                    </div>
+                  </Link>
+                  <Link href="/reports" className="block">
+                    <div className="rounded-lg bg-white p-4 shadow-sm transition hover:bg-zinc-50">
+                      <h2 className="font-medium text-zinc-900">알림장</h2>
+                      <p className="text-sm text-zinc-500">
+                        원에서 받은 돌봄 알림
                       </p>
                     </div>
                   </Link>
