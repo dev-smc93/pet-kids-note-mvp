@@ -1,8 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
+import { Swiper, SwiperSlide } from "swiper/react";
+import { Pagination } from "swiper/modules";
+import "swiper/css";
+import "swiper/css/pagination";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/lib/auth/auth-context";
 import { Button } from "@/components/ui/button";
@@ -67,6 +71,8 @@ export default function ReportDetailPage() {
   const [scheduledToCancel, setScheduledToCancel] = useState<ScheduledComment | null>(null);
   const commentListRef = useRef<HTMLDivElement>(null);
   const prevCommentCountRef = useRef(0);
+  const contentScrollRef = useRef<HTMLDivElement>(null);
+  const [showScrollArrow, setShowScrollArrow] = useState(false);
 
   const LAST_SCHEDULE_KEY = "comment_schedule_last";
 
@@ -124,6 +130,37 @@ export default function ReportDetailPage() {
       fetchScheduledComments();
     }
   }, [profile, isLoading, reportId]);
+
+  // 스크롤 화살표: 아래 내용 있을 때만 표시, 스크롤 시 숨김
+  const checkScrollArrow = useCallback(() => {
+    const el = contentScrollRef.current;
+    if (!el) return;
+    const hasOverflow = el.scrollHeight > el.clientHeight + 2;
+    const scrolled = el.scrollTop > 20;
+    setShowScrollArrow(hasOverflow && !scrolled);
+  }, []);
+
+  useEffect(() => {
+    if (!report) return;
+    checkScrollArrow();
+    const t1 = setTimeout(checkScrollArrow, 100);
+    const t2 = setTimeout(checkScrollArrow, 500);
+    const el = contentScrollRef.current;
+    if (el) {
+      const ro = new ResizeObserver(checkScrollArrow);
+      ro.observe(el);
+      return () => {
+        clearTimeout(t1);
+        clearTimeout(t2);
+        ro.disconnect();
+      };
+    }
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
+  }, [report, checkScrollArrow]);
+
 
   // 새 댓글 추가 시 스크롤 맨 아래로
   useEffect(() => {
@@ -415,76 +452,122 @@ export default function ReportDetailPage() {
 
       <main className="flex min-h-0 flex-1 flex-col overflow-hidden px-4 py-6">
         <div className="mx-auto flex min-h-0 w-full max-w-md flex-1 flex-col gap-4">
-          <div className="min-h-0 flex-[3] overflow-y-auto rounded-lg bg-white p-4 shadow-sm">
-            <div className="flex items-start gap-3">
-              {report.pet.photoUrl ? (
-                <img
-                  src={report.pet.photoUrl}
-                  alt={report.pet.name}
-                  className="h-14 w-14 rounded-full object-cover"
-                />
-              ) : (
-                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-zinc-200 text-2xl">
-                  🐾
-                </div>
-              )}
-              <div className="min-w-0 flex-1">
-                <h2 className="font-semibold text-zinc-900">{report.pet.name}</h2>
-                <p className="text-sm text-zinc-500">
-                  {report.author.name} · {new Date(report.createdAt).toLocaleString("ko-KR")}
-                </p>
-                {profile.role === "GUARDIAN" && report.readAt && (
-                  <p className="mt-1 text-xs text-zinc-400">
-                    열람: {new Date(report.readAt).toLocaleString("ko-KR")}
-                  </p>
+          <div className="flex min-h-0 flex-[3] flex-col overflow-hidden rounded-lg bg-white shadow-sm">
+            {/* 제목: 고정 (스크롤 안 됨) */}
+            <div className="shrink-0 border-b border-zinc-100">
+              <div className="flex items-start gap-3 p-4">
+                {report.pet.photoUrl ? (
+                  <img
+                    src={report.pet.photoUrl}
+                    alt={report.pet.name}
+                    className="h-14 w-14 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-zinc-200 text-2xl">
+                    🐾
+                  </div>
                 )}
+                <div className="min-w-0 flex-1">
+                  <h2 className="font-semibold text-zinc-900">{report.pet.name}</h2>
+                  <p className="text-sm text-zinc-500">
+                    {report.author.name} · {new Date(report.createdAt).toLocaleString("ko-KR")}
+                  </p>
+                  {profile.role === "GUARDIAN" && report.readAt && (
+                    <p className="mt-1 text-xs text-zinc-400">
+                      열람: {new Date(report.readAt).toLocaleString("ko-KR")}
+                    </p>
+                  )}
+                </div>
               </div>
             </div>
 
-            <div className="mt-4 whitespace-pre-wrap text-zinc-700">{report.content}</div>
+            {/* 스크롤 영역: 생활기록 → 이미지 → 내용 */}
+            <div className="relative flex min-h-0 flex-1 flex-col">
+              <div
+                ref={contentScrollRef}
+                onScroll={checkScrollArrow}
+                className="scrollbar-hide min-h-0 flex-1 overflow-y-auto overflow-x-hidden"
+              >
+              {/* 1. 생활기록 */}
+              {report.dailyRecord &&
+                ["mood", "health", "temperatureCheck", "mealStatus", "sleepTime", "bowelStatus"].some(
+                  (k) => report.dailyRecord![k as keyof typeof report.dailyRecord]
+                ) && (
+                <div className="border-b border-zinc-100 p-4">
+                  <h3 className="mb-3 text-sm font-semibold text-zinc-700">생활기록</h3>
+                  <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                    {(["mood", "health", "temperatureCheck", "mealStatus", "sleepTime", "bowelStatus"] as const).map(
+                      (key) => {
+                        const val = report.dailyRecord?.[key];
+                        if (!val) return null;
+                        return (
+                          <div key={key} className="flex gap-2">
+                            <dt className="text-zinc-500">{DAILY_RECORD_TITLES[key]}</dt>
+                            <dd className="text-zinc-900">{getDailyRecordLabel(key, val)}</dd>
+                          </div>
+                        );
+                      }
+                    )}
+                  </dl>
+                </div>
+              )}
 
-            {report.dailyRecord &&
-              ["mood", "health", "temperatureCheck", "mealStatus", "sleepTime", "bowelStatus"].some(
-                (k) => report.dailyRecord![k as keyof typeof report.dailyRecord]
-              ) && (
-              <div className="mt-4 rounded-lg border border-zinc-100 bg-zinc-50 p-4">
-                <h3 className="mb-3 text-sm font-semibold text-zinc-700">생활기록</h3>
-                <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-                  {(["mood", "health", "temperatureCheck", "mealStatus", "sleepTime", "bowelStatus"] as const).map(
-                    (key) => {
-                      const val = report.dailyRecord?.[key];
-                      if (!val) return null;
-                      return (
-                        <div key={key} className="flex gap-2">
-                          <dt className="text-zinc-500">{DAILY_RECORD_TITLES[key]}</dt>
-                          <dd className="text-zinc-900">{getDailyRecordLabel(key, val)}</dd>
-                        </div>
-                      );
-                    }
-                  )}
-                </dl>
-              </div>
-            )}
-
-            {report.media.length > 0 && (
-              <div className="mt-4 flex flex-wrap gap-2">
-                {report.media.map((m) => (
-                  <a
-                    key={m.id}
-                    href={m.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="block"
+              {/* 2. 이미지 (Swiper) */}
+              {report.media.length > 0 && (
+                <div className="report-image-swiper border-b border-zinc-100 py-4">
+                  <Swiper
+                    modules={report.media.length > 1 ? [Pagination] : []}
+                    spaceBetween={0}
+                    slidesPerView={1}
+                    pagination={report.media.length > 1 ? { clickable: true } : false}
+                    className="!overflow-hidden"
                   >
-                    <img
-                      src={m.url}
-                      alt="첨부"
-                      className="h-24 w-24 rounded-lg object-cover"
-                    />
-                  </a>
-                ))}
+                    {report.media.map((m, i) => (
+                      <SwiperSlide key={m.id}>
+                        <div className="aspect-[4/3] w-full overflow-hidden bg-zinc-100">
+                          <img
+                            src={m.url}
+                            alt={`첨부 ${i + 1}`}
+                            className="h-full w-full object-cover"
+                            draggable={false}
+                            onLoad={checkScrollArrow}
+                          />
+                        </div>
+                      </SwiperSlide>
+                    ))}
+                  </Swiper>
+                </div>
+              )}
+
+              {/* 3. 내용 */}
+              <div className="p-4">
+                <div className="whitespace-pre-wrap text-zinc-700">{report.content}</div>
               </div>
-            )}
+              </div>
+              {showScrollArrow && (
+                <div
+                  className="scroll-arrow-hint pointer-events-none absolute bottom-3 left-1/2 z-10 animate-bounce-down"
+                  aria-hidden
+                >
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white/90 shadow-md">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="text-zinc-600"
+                    >
+                      <path d="m6 9 6 6 6-6" />
+                    </svg>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="flex min-h-0 flex-[2] flex-col overflow-hidden rounded-lg bg-white p-4 shadow-sm">
