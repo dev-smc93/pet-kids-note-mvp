@@ -75,8 +75,11 @@ export async function GET(request: Request) {
     const mapped = reports.map((r) => {
       const { reportReads, media, pet, _count, authorUserId, ...rest } = r;
       const group = pet.memberships.find((m) => m.group.ownerUserId === authorUserId)?.group;
+      const isGuardianPost = authorUserId === pet.ownerUserId;
       return {
         ...rest,
+        authorUserId,
+        isGuardianPost,
         pet: { id: pet.id, name: pet.name, photoUrl: pet.photoUrl },
         isRead: reportReads.length > 0,
         readAt: reportReads[0]?.readAt ?? null,
@@ -158,8 +161,11 @@ export async function GET(request: Request) {
       const isReadByGuardian = reportReads.some((rr) => rr.userId === guardianUserId);
       const isReadByAdmin = reportReads.some((rr) => rr.userId === adminProfile!.userId);
       const group = pet.memberships.find((m) => m.group.ownerUserId === authorUserId)?.group;
+      const isGuardianPost = authorUserId === pet.ownerUserId;
       return {
         ...rest,
+        authorUserId,
+        isGuardianPost,
         pet: { id: pet.id, name: pet.name, photoUrl: pet.photoUrl },
         guardianName: pet.owner.name,
         groupName: group?.name ?? null,
@@ -173,9 +179,9 @@ export async function GET(request: Request) {
   );
 }
 
-// POST: 알림장 작성 (관리자)
+// POST: 알림장 작성 (관리자 + 보호자, 보호자는 생활기록 제외)
 export async function POST(request: Request) {
-  const { profile, error } = await requireAdmin();
+  const { profile, error } = await getAuthUser();
   if (error) return error;
 
   const body = await request.json();
@@ -212,13 +218,22 @@ export async function POST(request: Request) {
     );
   }
 
-  const membership = await prisma.membership.findFirst({
-    where: {
-      petId: petId.trim(),
-      status: "APPROVED",
-      group: { ownerUserId: profile!.userId },
-    },
-  });
+  const membership =
+    profile!.role === "ADMIN"
+      ? await prisma.membership.findFirst({
+          where: {
+            petId: petId.trim(),
+            status: "APPROVED",
+            group: { ownerUserId: profile!.userId },
+          },
+        })
+      : await prisma.membership.findFirst({
+          where: {
+            petId: petId.trim(),
+            userId: profile!.userId,
+            status: "APPROVED",
+          },
+        });
 
   if (!membership) {
     return NextResponse.json(
@@ -227,7 +242,8 @@ export async function POST(request: Request) {
     );
   }
 
-  const dr = sanitizeDailyRecord(dailyRecord);
+  const dr =
+    profile!.role === "ADMIN" ? sanitizeDailyRecord(dailyRecord) : null;
 
   const report = await prisma.report.create({
     data: {

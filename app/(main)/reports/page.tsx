@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth/auth-context";
@@ -11,6 +11,8 @@ interface ReportItem {
   createdAt: string;
   pet: { id: string; name: string; photoUrl: string | null };
   author: { name: string };
+  authorUserId?: string;
+  isGuardianPost?: boolean;
   isRead?: boolean;
   readAt?: string | null;
   commentCount?: number;
@@ -54,6 +56,16 @@ export default function ReportsPage() {
   const now = new Date();
   const defaultMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
   const [selectedMonth, setSelectedMonth] = useState<string>(defaultMonth);
+  const [showScrollArrow, setShowScrollArrow] = useState(false);
+  const listScrollRef = useRef<HTMLUListElement>(null);
+
+  const checkScrollArrow = useCallback(() => {
+    const el = listScrollRef.current;
+    if (!el) return;
+    const hasOverflow = el.scrollHeight > el.clientHeight + 2;
+    const scrolled = el.scrollTop > 20;
+    setShowScrollArrow(hasOverflow && !scrolled);
+  }, []);
 
   useEffect(() => {
     if (!isLoading && !profile) {
@@ -88,6 +100,33 @@ export default function ReportsPage() {
     const d = new Date(r.createdAt);
     return d.getFullYear() === year && d.getMonth() + 1 === month;
   });
+
+  useEffect(() => {
+    if (filteredReports.length === 0) return;
+    checkScrollArrow();
+    const t1 = setTimeout(checkScrollArrow, 100);
+    const t2 = setTimeout(checkScrollArrow, 300);
+    const el = listScrollRef.current;
+    if (el) {
+      const ro = new ResizeObserver(checkScrollArrow);
+      ro.observe(el);
+      return () => {
+        clearTimeout(t1);
+        clearTimeout(t2);
+        ro.disconnect();
+      };
+    }
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
+  }, [filteredReports.length, selectedMonth, checkScrollArrow]);
+
+  const handleScrollDown = () => {
+    const el = listScrollRef.current;
+    if (!el) return;
+    el.scrollBy({ top: el.clientHeight * 0.8, behavior: "smooth" });
+  };
 
   if (isLoading) {
     return (
@@ -183,10 +222,10 @@ export default function ReportsPage() {
         </Link>
       </header>
 
-      <main className="flex-1 bg-zinc-50 px-4 py-4">
-        <div className="mx-auto max-w-md">
+      <main className="flex min-h-0 flex-1 flex-col bg-zinc-50 px-4 py-4">
+        <div className="mx-auto flex max-w-md flex-1 flex-col overflow-hidden">
           {/* 월 선택 */}
-          <div className="relative mb-4">
+          <div className="relative mb-4 shrink-0">
             <select
               value={selectedMonth}
               onChange={(e) => setSelectedMonth(e.target.value)}
@@ -209,7 +248,7 @@ export default function ReportsPage() {
           </div>
 
           {filteredReports.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16">
+            <div className="flex flex-1 flex-col items-center justify-center py-16">
               <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-zinc-100">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -236,7 +275,12 @@ export default function ReportsPage() {
               )}
             </div>
           ) : (
-            <ul className="space-y-3">
+            <div className="relative min-h-0 flex-1">
+              <ul
+                ref={listScrollRef}
+                onScroll={checkScrollArrow}
+                className="scrollbar-hide min-h-0 max-h-[80vh] space-y-3 overflow-y-auto overflow-x-hidden"
+              >
               {filteredReports.map((r) => {
                 const d = new Date(r.createdAt);
                 const dateNum = d.getDate();
@@ -246,11 +290,11 @@ export default function ReportsPage() {
                     <Link href={`/reports/${r.id}`}>
                       <div
                         className={`flex gap-4 rounded-lg p-4 shadow-sm transition ${
-                          (profile.role === "GUARDIAN" && !r.isRead) ||
+                          (profile.role === "GUARDIAN" && !r.isRead && !r.isGuardianPost) ||
                           (profile.role === "ADMIN" && r.isReadByAdmin === false)
                             ? "bg-amber-50 hover:bg-amber-100"
                             : "bg-white hover:bg-zinc-50"
-                        } ${profile.role === "GUARDIAN" && !r.isRead ? "border-l-4 border-amber-500" : ""}`}
+                        } ${profile.role === "GUARDIAN" && !r.isRead && !r.isGuardianPost ? "border-l-4 border-amber-500" : ""}`}
                       >
                         {/* 좌측: 날짜, 요일 */}
                         <div className="flex shrink-0 flex-col items-center border-r border-zinc-100 pr-4">
@@ -260,13 +304,13 @@ export default function ReportsPage() {
                         {/* 우측: 수신자, 내용, 미수신, 썸네일 */}
                         <div className="min-w-0 flex-1">
                           <p className="text-sm font-medium text-zinc-900">
-                            {r.groupName && `${r.groupName} · `}
-                            {r.pet.name}
-                            {profile.role === "ADMIN" && r.guardianName && ` | ${r.guardianName}`}
+                            {r.isGuardianPost
+                              ? `${r.pet.name} · 보호자의 글`
+                              : `${r.groupName ? `${r.groupName} · ` : ""}${r.pet.name}${profile.role === "ADMIN" && r.guardianName ? ` | ${r.guardianName}` : ""}`}
                           </p>
                           <p className="mt-0.5 line-clamp-2 text-sm text-zinc-600">{r.content}</p>
                           <div className="mt-1.5 flex items-center gap-2">
-                            {profile.role === "GUARDIAN" && !r.isRead && (
+                            {profile.role === "GUARDIAN" && !r.isRead && !r.isGuardianPost && (
                               <span className="rounded bg-amber-100 px-1.5 py-0.5 text-xs text-amber-800">
                                 새 알림
                               </span>
@@ -311,13 +355,37 @@ export default function ReportsPage() {
                   </li>
                 );
               })}
-            </ul>
+              </ul>
+              {showScrollArrow && (
+                <button
+                  type="button"
+                  onClick={handleScrollDown}
+                  className="absolute bottom-3 left-1/2 z-10 animate-bounce-down rounded-full bg-white/90 p-2 shadow-md transition hover:bg-white"
+                  aria-label="아래로 스크롤"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="text-zinc-600"
+                  >
+                    <path d="m6 9 6 6 6-6" />
+                  </svg>
+                </button>
+              )}
+            </div>
           )}
         </div>
       </main>
 
-      {/* FAB: 관리자만 표시 */}
-      {profile.role === "ADMIN" && (
+      {/* FAB: 관리자 + 보호자 표시 */}
+      {(profile.role === "ADMIN" || profile.role === "GUARDIAN") && (
         <Link
           href="/reports/new"
           className="fixed bottom-6 right-6 flex h-14 w-14 items-center justify-center rounded-full bg-red-500 text-white shadow-lg transition hover:bg-red-600 active:scale-95"

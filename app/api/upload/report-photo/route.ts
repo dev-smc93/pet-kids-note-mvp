@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { requireAdmin } from "@/lib/api/auth";
+import { getAuthUser } from "@/lib/api/auth";
 
 const BUCKET = "report-photos";
 const MAX_SIZE = 5 * 1024 * 1024; // 5MB
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
 export async function POST(request: Request) {
-  const { profile, error } = await requireAdmin();
+  const { profile, error } = await getAuthUser();
   if (error) return error;
 
   let formData: FormData;

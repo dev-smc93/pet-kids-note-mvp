@@ -35,6 +35,8 @@ interface ReportFormProps {
   formId?: string;
   /** 로딩 상태 변경 시 콜백 (외부 버튼 비활성화용) */
   onLoadingChange?: (loading: boolean) => void;
+  /** 생활기록 표시 여부 (보호자: false, 관리자: true) */
+  showDailyRecord?: boolean;
 }
 
 const MAX_CONTENT = 5000;
@@ -51,6 +53,7 @@ export function ReportForm({
   hideActions,
   formId,
   onLoadingChange,
+  showDailyRecord = true,
 }: ReportFormProps) {
   const isEdit = !!report;
   const [selectedPetIds, setSelectedPetIds] = useState<string[]>(
@@ -168,7 +171,11 @@ export function ReportForm({
       const res = await fetch(`/api/reports/${report!.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: content.trim(), mediaUrls, dailyRecord }),
+        body: JSON.stringify({
+          content: content.trim(),
+          mediaUrls,
+          dailyRecord: showDailyRecord ? dailyRecord : undefined,
+        }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -191,7 +198,7 @@ export function ReportForm({
           petId,
           content: content.trim(),
           mediaUrls,
-          dailyRecord,
+          dailyRecord: showDailyRecord ? dailyRecord : undefined,
         }),
       });
       const data = await res.json();
@@ -217,7 +224,7 @@ export function ReportForm({
     <form
       id={formId}
       onSubmit={handleSubmit}
-      className="flex w-full max-w-md flex-col gap-4 pb-24"
+      className={`flex w-full max-w-md flex-col gap-4 ${showDailyRecord ? "pb-24" : ""}`}
     >
       {isEdit && (
         <div className="flex overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-sm">
@@ -401,11 +408,13 @@ export function ReportForm({
         </p>
       </div>
 
-      <DailyRecordForm
-        value={dailyRecord}
-        onChange={setDailyRecord}
-        defaultCollapsed={true}
-      />
+      {showDailyRecord && (
+        <DailyRecordForm
+          value={dailyRecord}
+          onChange={setDailyRecord}
+          defaultCollapsed={true}
+        />
+      )}
 
       {!hideActions && !isEdit && (
         <div className="flex gap-3">

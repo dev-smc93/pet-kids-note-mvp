@@ -20,7 +20,7 @@ interface GroupOption {
   sido: string;
   sigungu: string;
   address: string;
-  membershipCounts: { approved: number; pending: number; rejected: number };
+  membershipCounts?: { approved: number; pending: number; rejected: number };
 }
 
 interface GroupDetailData {
@@ -37,41 +37,82 @@ export default function ReportNewPage() {
   const [groupDetail, setGroupDetail] = useState<GroupDetailData | null>(null);
   const [isLoadingGroupDetail, setIsLoadingGroupDetail] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [guardianGroupPets, setGuardianGroupPets] = useState<Record<string, PetOption[]>>({});
+  const isAdmin = profile?.role === "ADMIN";
+  const isGuardian = profile?.role === "GUARDIAN";
 
   useEffect(() => {
-    if (!isLoading && profile?.role !== "ADMIN") {
-      router.replace("/");
+    if (!isLoading && !profile) {
+      router.replace("/auth/login");
       return;
     }
-    if (profile?.role === "ADMIN") {
+    if (profile && (isAdmin || isGuardian)) {
       setIsLoadingGroups(true);
-      fetch("/api/groups")
-        .then((res) => (res.ok ? res.json() : []))
-        .then((data: GroupOption[]) =>
-          setGroups(data.filter((g) => (g.membershipCounts?.approved ?? 0) > 0))
-        )
-        .catch(() => setGroups([]))
-        .finally(() => setIsLoadingGroups(false));
+      if (isAdmin) {
+        fetch("/api/groups")
+          .then((res) => (res.ok ? res.json() : []))
+          .then((data: GroupOption[]) =>
+            setGroups(data.filter((g) => (g.membershipCounts?.approved ?? 0) > 0))
+          )
+          .catch(() => setGroups([]))
+          .finally(() => setIsLoadingGroups(false));
+      } else {
+        fetch("/api/memberships")
+          .then((res) => (res.ok ? res.json() : []))
+          .then((data: { group: GroupOption; pet: PetOption; status: string }[]) => {
+            const approved = data.filter((m) => m.status === "APPROVED");
+            const byGroup = new Map<string, { group: GroupOption; pets: PetOption[] }>();
+            for (const m of approved) {
+              const g = m.group;
+              if (!byGroup.has(g.id)) {
+                byGroup.set(g.id, { group: g, pets: [] });
+              }
+              byGroup.get(g.id)!.pets.push(m.pet);
+            }
+            const groupList = Array.from(byGroup.values()).map(({ group, pets }) => ({
+              ...group,
+              membershipCounts: { approved: pets.length, pending: 0, rejected: 0 },
+            }));
+            const petsMap: Record<string, PetOption[]> = {};
+            byGroup.forEach(({ group, pets }) => {
+              petsMap[group.id] = pets;
+            });
+            setGroups(groupList);
+            setGuardianGroupPets(petsMap);
+          })
+          .catch(() => {
+            setGroups([]);
+            setGuardianGroupPets({});
+          })
+          .finally(() => setIsLoadingGroups(false));
+      }
     } else {
       setIsLoadingGroups(false);
     }
-  }, [profile, isLoading, router]);
+  }, [profile, isLoading, router, isAdmin, isGuardian]);
 
   useEffect(() => {
-    if (selectedGroupId) {
+    if (selectedGroupId && isAdmin) {
       setIsLoadingGroupDetail(true);
       fetch(`/api/groups/${selectedGroupId}`)
         .then((res) => (res.ok ? res.json() : null))
         .then(setGroupDetail)
         .catch(() => setGroupDetail(null))
         .finally(() => setIsLoadingGroupDetail(false));
+    } else if (selectedGroupId && isGuardian) {
+      const pets = guardianGroupPets[selectedGroupId] ?? [];
+      setGroupDetail({
+        id: selectedGroupId,
+        memberships: pets.map((pet) => ({ pet, status: "APPROVED" })),
+      });
+      setIsLoadingGroupDetail(false);
     } else {
       setGroupDetail(null);
       setIsLoadingGroupDetail(false);
     }
-  }, [selectedGroupId]);
+  }, [selectedGroupId, isAdmin, isGuardian, guardianGroupPets]);
 
-  if (isLoading || profile?.role !== "ADMIN") {
+  if (isLoading || !profile || (profile.role !== "ADMIN" && profile.role !== "GUARDIAN")) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-zinc-300 border-t-zinc-900" />
@@ -154,9 +195,14 @@ export default function ReportNewPage() {
               </p>
               {groups.length === 0 ? (
                 <div className="rounded-lg bg-white p-6 text-center">
-                  <p className="text-zinc-600">연결된 반려동물이 있는 원이 없습니다.</p>
-                  <Link href="/groups" className="mt-4 inline-block text-zinc-900 underline">
-                    원 관리에서 반려동물 연결하기
+                  <p className="text-zinc-600">
+                    {isAdmin ? "연결된 반려동물이 있는 원이 없습니다." : "연결된 원이 없습니다."}
+                  </p>
+                  <Link
+                    href={isAdmin ? "/groups" : "/search-centers"}
+                    className="mt-4 inline-block text-zinc-900 underline"
+                  >
+                    {isAdmin ? "원 관리에서 반려동물 연결하기" : "원 검색에서 연결 요청하기"}
                   </Link>
                 </div>
               ) : (
@@ -227,6 +273,7 @@ export default function ReportNewPage() {
                 hideActions
                 formId="report-form"
                 onLoadingChange={setIsSubmitting}
+                showDailyRecord={isAdmin}
               />
             </div>
           ) : isLoadingGroupDetail ? (
