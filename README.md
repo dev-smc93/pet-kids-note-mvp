@@ -85,7 +85,7 @@ report_comments(id, report_id, author_user_id, content, created_at, updated_at) 
 
 - [x] 관리자: 알림장 작성
   - [x] 필수: 내용 (최대 5,000자)
-  - [x] 선택: 사진 첨부 (3~10장 제한)
+  - [x] 선택: 사진 첨부 (1~10장 제한)
   - [x] 대상: 반 또는 반려동물(개별) 중 선택 (MVP에선 개별만 해도 충분)
 - [x] 보호자: 알림장 목록 조회
 - [x] 보호자: 알림장 상세 조회
@@ -94,12 +94,7 @@ report_comments(id, report_id, author_user_id, content, created_at, updated_at) 
 - [x] 수정/삭제: 관리자만 가능
 - [x] **관리자 & 보호자 간 댓글 기능** (알림장 단위로 대화)
 
-### D. 간소화 알림장 모드 (선택)
-
-- [ ] 관리자 설정 ON/OFF
-- [ ] ON 시: 200자 제한 + 첨부 불가
-
-### E. 배포 및 마무리
+### D. 배포 및 마무리
 
 - [ ] Vercel 배포
 - [ ] env 세팅
@@ -113,6 +108,7 @@ report_comments(id, report_id, author_user_id, content, created_at, updated_at) 
 Vercel 배포 완료 후 적용 가능
 
 - manifest + 아이콘 + 서비스워커(기본 캐싱)만으로 "설치형 웹앱" 제공
+- 알림장 등록 및 댓글 등록 시 푸시 알람 추가
 
 ---
 
