@@ -88,16 +88,6 @@ export default function HomePage() {
                       </p>
                     </div>
                   </Link>
-                  <Link href="/search-centers" className="block">
-                    <div className="rounded-lg border-2 border-dashed border-zinc-300 p-4 transition hover:border-zinc-400 hover:bg-zinc-50">
-                      <h2 className="font-medium text-zinc-900">
-                        + 원 검색
-                      </h2>
-                      <p className="text-sm text-zinc-500">
-                        시/도로 원을 검색해 연결 요청
-                      </p>
-                    </div>
-                  </Link>
                 </div>
               )}
             </>

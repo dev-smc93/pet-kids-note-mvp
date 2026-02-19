@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,8 @@ interface PetOption {
   name: string;
   breed: string | null;
   photoUrl: string | null;
+  /** 보호자(부모) 이름 */
+  ownerName?: string;
 }
 
 interface ReportFormProps {
@@ -23,6 +25,14 @@ interface ReportFormProps {
   };
   backHref: string;
   backLabel: string;
+  /** 작성 완료 후 이동할 URL (미지정 시 /groups/{groupId}) */
+  successRedirect?: string;
+  /** 하단 취소/작성 버튼 숨김 (상위에서 세그먼트 버튼 등으로 대체 시) */
+  hideActions?: boolean;
+  /** form id (외부 submit 버튼 연동용) */
+  formId?: string;
+  /** 로딩 상태 변경 시 콜백 (외부 버튼 비활성화용) */
+  onLoadingChange?: (loading: boolean) => void;
 }
 
 const MAX_CONTENT = 5000;
@@ -35,16 +45,43 @@ export function ReportForm({
   report,
   backHref,
   backLabel,
+  successRedirect,
+  hideActions,
+  formId,
+  onLoadingChange,
 }: ReportFormProps) {
   const isEdit = !!report;
-  const [petId, setPetId] = useState(report?.pet.id ?? (pets[0]?.id ?? ""));
+  const [selectedPetIds, setSelectedPetIds] = useState<string[]>(
+    report ? [report.pet.id] : []
+  );
+
+  const togglePet = (id: string) => {
+    if (isEdit) return;
+    setSelectedPetIds((prev) =>
+      prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id]
+    );
+  };
   const [content, setContent] = useState(report?.content ?? "");
   const [mediaUrls, setMediaUrls] = useState<string[]>(
     report?.media.map((m) => m.url) ?? []
   );
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isPetDropdownOpen, setIsPetDropdownOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const petDropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (petDropdownRef.current && !petDropdownRef.current.contains(e.target as Node)) {
+        setIsPetDropdownOpen(false);
+      }
+    };
+    if (isPetDropdownOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isPetDropdownOpen]);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -105,67 +142,169 @@ export function ReportForm({
       setError(`사진은 ${MIN_PHOTOS}~${MAX_PHOTOS}장까지 첨부 가능합니다.`);
       return;
     }
-    if (!isEdit && !petId) {
-      setError("대상 반려동물을 선택해주세요.");
+    if (!isEdit && selectedPetIds.length === 0) {
+      setError("대상 반려동물을 1마리 이상 선택해주세요.");
       return;
     }
 
     setIsLoading(true);
+    onLoadingChange?.(true);
 
-    const url = isEdit ? `/api/reports/${report!.id}` : "/api/reports";
-    const method = isEdit ? "PATCH" : "POST";
-    const body = isEdit
-      ? { content: content.trim(), mediaUrls }
-      : { petId, content: content.trim(), mediaUrls };
-
-    const res = await fetch(url, {
-      method,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
-
-    const data = await res.json();
-    if (!res.ok) {
-      setError(data.error ?? "저장에 실패했습니다.");
-      setIsLoading(false);
+    if (isEdit) {
+      const res = await fetch(`/api/reports/${report!.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: content.trim(), mediaUrls }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error ?? "저장에 실패했습니다.");
+        setIsLoading(false);
+        onLoadingChange?.(false);
+        return;
+      }
+      window.location.href = `/reports/${report!.id}`;
       return;
     }
 
-    if (isEdit) {
-      window.location.href = `/reports/${report!.id}`;
-    } else {
-      window.location.href = `/groups/${groupId}`;
+    // 다중 선택 시 선택된 petId마다 알림장 생성
+    let lastError = "";
+    for (const petId of selectedPetIds) {
+      const res = await fetch("/api/reports", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          petId,
+          content: content.trim(),
+          mediaUrls,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        lastError = data.error ?? "저장에 실패했습니다.";
+      }
     }
+
+    if (lastError) {
+      setError(lastError);
+      setIsLoading(false);
+      onLoadingChange?.(false);
+      return;
+    }
+
+    window.location.href = successRedirect ?? `/groups/${groupId}`;
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex w-full max-w-md flex-col gap-4">
-      <h1 className="text-xl font-semibold text-zinc-900">
-        {isEdit ? "알림장 수정" : "알림장 작성"}
-      </h1>
+    <form
+      id={formId}
+      onSubmit={handleSubmit}
+      className="flex w-full max-w-md flex-col gap-4"
+    >
+      {isEdit && (
+        <h1 className="text-xl font-semibold text-zinc-900">알림장 수정</h1>
+      )}
 
       {error && (
         <p className="rounded-lg bg-red-50 p-3 text-sm text-red-600">{error}</p>
       )}
 
-      {!isEdit && (
-        <div className="w-full">
-          <label className="mb-1.5 block text-sm font-medium text-zinc-700">
-            대상 반려동물
+      {!isEdit && pets.length > 0 && (
+        <div ref={petDropdownRef} className="relative w-full">
+          <label className="mb-2 block text-sm font-medium text-zinc-700">
+            대상 반려동물 (다중 선택 가능)
           </label>
-          <select
-            value={petId}
-            onChange={(e) => setPetId(e.target.value)}
-            className="w-full rounded-lg border border-zinc-300 bg-white px-4 py-3 text-base text-zinc-900 focus:border-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-200"
+          <button
+            type="button"
+            onClick={() => setIsPetDropdownOpen((v) => !v)}
+            className="flex w-full items-center justify-between rounded-lg border border-zinc-300 bg-white px-4 py-3 text-left text-base text-zinc-900 focus:border-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-200"
           >
-            <option value="">선택하세요</option>
-            {pets.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-                {p.breed ? ` (${p.breed})` : ""}
-              </option>
-            ))}
-          </select>
+            <span className={selectedPetIds.length === 0 ? "text-zinc-400" : ""}>
+              {selectedPetIds.length === 0
+                ? "선택하세요"
+                : selectedPetIds.length === 1
+                  ? pets.find((p) => p.id === selectedPetIds[0])?.name ?? "선택됨"
+                  : `${selectedPetIds.length}마리 선택됨`}
+            </span>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              className={`flex-shrink-0 text-zinc-500 transition-transform ${isPetDropdownOpen ? "rotate-180" : ""}`}
+            >
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
+          </button>
+          {isPetDropdownOpen && (
+            <ul className="absolute left-0 right-0 top-full z-20 mt-1 max-h-60 divide-y divide-zinc-200 overflow-y-auto rounded-lg border border-zinc-200 bg-white shadow-lg">
+              {pets.map((p) => {
+                const checked = selectedPetIds.includes(p.id);
+                return (
+                  <li key={p.id}>
+                    <label
+                      className="flex cursor-pointer items-center gap-3 px-4 py-3 text-left hover:bg-zinc-50"
+                      onClick={() => togglePet(p.id)}
+                    >
+                      <span className="flex-shrink-0">
+                        {checked ? (
+                          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-white">
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              width="14"
+                              height="14"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2.5"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            >
+                              <polyline points="20 6 9 17 4 12" />
+                            </svg>
+                          </span>
+                        ) : (
+                          <span className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-zinc-300" />
+                        )}
+                      </span>
+                      <span className="relative h-10 w-10 flex-shrink-0 overflow-hidden rounded-full bg-zinc-200">
+                        {p.photoUrl ? (
+                          <img
+                            src={p.photoUrl}
+                            alt={p.name}
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          <span className="flex h-full w-full items-center justify-center text-zinc-400">
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              width="20"
+                              height="20"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                            >
+                              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                              <circle cx="12" cy="7" r="4" />
+                            </svg>
+                          </span>
+                        )}
+                      </span>
+                      <span className="flex-1 text-sm text-zinc-900">
+                        {p.name}
+                        {p.ownerName ? ` (부모: ${p.ownerName})` : ""}
+                        {p.breed ? ` · ${p.breed}` : ""}
+                      </span>
+                    </label>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
         </div>
       )}
 
@@ -232,18 +371,20 @@ export function ReportForm({
         </p>
       </div>
 
-      <div className="flex gap-3">
-        <Link href={backHref} className="flex-1">
-          <Button type="button" variant="outline" fullWidth>
-            취소
-          </Button>
-        </Link>
-        <div className="flex-1">
-          <Button type="submit" fullWidth isLoading={isLoading}>
-            {isEdit ? "저장" : "작성"}
-          </Button>
+      {!hideActions && (
+        <div className="flex gap-3">
+          <Link href={backHref} className="flex-1">
+            <Button type="button" variant="outline" fullWidth>
+              취소
+            </Button>
+          </Link>
+          <div className="flex-1">
+            <Button type="submit" fullWidth isLoading={isLoading}>
+              {isEdit ? "저장" : "작성"}
+            </Button>
+          </div>
         </div>
-      </div>
+      )}
     </form>
   );
 }
