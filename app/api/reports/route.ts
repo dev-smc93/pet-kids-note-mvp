@@ -3,6 +3,28 @@ import { prisma } from "@/lib/prisma";
 import { getAuthUser, requireAdmin } from "@/lib/api/auth";
 
 const MAX_CONTENT_LENGTH = 5000;
+
+const VALID_DAILY_RECORD = {
+  mood: ["GOOD", "NORMAL", "BAD"],
+  health: ["GOOD", "NORMAL", "BAD"],
+  temperatureCheck: ["NORMAL", "LOW_FEVER", "HIGH_FEVER"],
+  mealStatus: ["NORMAL_AMOUNT", "A_LOT", "A_LITTLE", "NONE"],
+  sleepTime: ["NONE", "UNDER_1H", "1H_1H30", "1H30_2H", "OVER_2H"],
+  bowelStatus: ["NORMAL", "HARD", "LOOSE", "DIARRHEA", "NONE"],
+} as const;
+
+function sanitizeDailyRecord(dr: unknown): Record<string, string> | null {
+  if (!dr || typeof dr !== "object") return null;
+  const obj = dr as Record<string, unknown>;
+  const result: Record<string, string> = {};
+  for (const [key, validValues] of Object.entries(VALID_DAILY_RECORD)) {
+    const val = obj[key];
+    if (typeof val === "string" && (validValues as readonly string[]).includes(val)) {
+      result[key] = val;
+    }
+  }
+  return Object.keys(result).length > 0 ? result : null;
+}
 const MAX_MEDIA = 10;
 
 // GET: 알림장 목록 (보호자: 내 반려동물 / 관리자: 내 원의 반려동물)
@@ -134,6 +156,7 @@ export async function GET(request: Request) {
       const { _count, reportReads, pet, media, authorUserId, ...rest } = r;
       const guardianUserId = pet.ownerUserId;
       const isReadByGuardian = reportReads.some((rr) => rr.userId === guardianUserId);
+      const isReadByAdmin = reportReads.some((rr) => rr.userId === adminProfile!.userId);
       const group = pet.memberships.find((m) => m.group.ownerUserId === authorUserId)?.group;
       return {
         ...rest,
@@ -143,6 +166,7 @@ export async function GET(request: Request) {
         groupId: group?.id ?? null,
         commentCount: _count.reportComments,
         isReadByGuardian,
+        isReadByAdmin,
         thumbnailUrl: media[0]?.url ?? null,
       };
     })
@@ -155,7 +179,7 @@ export async function POST(request: Request) {
   if (error) return error;
 
   const body = await request.json();
-  const { petId, content, mediaUrls } = body;
+  const { petId, content, mediaUrls, dailyRecord } = body;
 
   if (!petId || typeof petId !== "string" || !petId.trim()) {
     return NextResponse.json(
@@ -203,6 +227,8 @@ export async function POST(request: Request) {
     );
   }
 
+  const dr = sanitizeDailyRecord(dailyRecord);
+
   const report = await prisma.report.create({
     data: {
       petId: petId.trim(),
@@ -214,6 +240,7 @@ export async function POST(request: Request) {
               create: urls.map((url: string) => ({ url, type: "image" })),
             }
           : undefined,
+      dailyRecord: dr ? { create: dr } : undefined,
     },
     include: {
       pet: { select: { id: true, name: true } },

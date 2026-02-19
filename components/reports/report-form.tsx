@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { DailyRecordForm, type DailyRecordData } from "./daily-record-form";
 
 interface PetOption {
   id: string;
@@ -22,6 +23,7 @@ interface ReportFormProps {
     content: string;
     media: { id: string; url: string }[];
     pet: { id: string; name: string };
+    dailyRecord?: DailyRecordData | null;
   };
   backHref: string;
   backLabel: string;
@@ -64,6 +66,18 @@ export function ReportForm({
   const [content, setContent] = useState(report?.content ?? "");
   const [mediaUrls, setMediaUrls] = useState<string[]>(
     report?.media.map((m) => m.url) ?? []
+  );
+  const [dailyRecord, setDailyRecord] = useState<DailyRecordData>(
+    report?.dailyRecord 
+      ? {
+          mood: report.dailyRecord.mood ?? undefined,
+          health: report.dailyRecord.health ?? undefined,
+          temperatureCheck: report.dailyRecord.temperatureCheck ?? undefined,
+          mealStatus: report.dailyRecord.mealStatus ?? undefined,
+          sleepTime: report.dailyRecord.sleepTime ?? undefined,
+          bowelStatus: report.dailyRecord.bowelStatus ?? undefined,
+        }
+      : {}
   );
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -154,7 +168,7 @@ export function ReportForm({
       const res = await fetch(`/api/reports/${report!.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: content.trim(), mediaUrls }),
+        body: JSON.stringify({ content: content.trim(), mediaUrls, dailyRecord }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -177,6 +191,7 @@ export function ReportForm({
           petId,
           content: content.trim(),
           mediaUrls,
+          dailyRecord,
         }),
       });
       const data = await res.json();
@@ -345,6 +360,12 @@ export function ReportForm({
           {content.length}/{MAX_CONTENT}
         </p>
       </div>
+
+      <DailyRecordForm
+        value={dailyRecord}
+        onChange={setDailyRecord}
+        defaultCollapsed={true}
+      />
 
       <div className="w-full">
         <label className="mb-1.5 block text-sm font-medium text-zinc-700">

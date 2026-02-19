@@ -104,13 +104,32 @@ model Report {
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
-  pet            Pet             @relation(fields: [petId], references: [id], onDelete: Cascade)
-  author         Profile         @relation("ReportAuthor", fields: [authorUserId], references: [userId], onDelete: Cascade)
+  pet            Pet               @relation(fields: [petId], references: [id], onDelete: Cascade)
+  author         Profile           @relation("ReportAuthor", fields: [authorUserId], references: [userId], onDelete: Cascade)
   media          ReportMedia[]
   reportReads    ReportRead[]
   reportComments ReportComment[]
+  dailyRecord    ReportDailyRecord?
 
   @@map("reports")
+}
+
+// report_daily_records - 생활기록 (알림장 1:1)
+model ReportDailyRecord {
+  id               String   @id @default(uuid())
+  reportId         String   @unique @map("report_id")
+  mood             String?  @map("mood")              // 좋음, 보통, 나쁨
+  health           String?  @map("health")            // 좋음, 보통, 나쁨
+  temperatureCheck String?  @map("temperature_check") // 정상, 미열, 고열
+  mealStatus       String?  @map("meal_status")       // 정량, 많이, 적게, 안했음
+  sleepTime        String?  @map("sleep_time")        // 잠을 안 잤음, 1시간 미만, ...
+  bowelStatus      String?  @map("bowel_status")     // 보통, 딱딱함, 묽음, 설사, 안했음
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  report Report @relation(fields: [reportId], references: [id], onDelete: Cascade)
+
+  @@map("report_daily_records")
 }
 
 // report_media - 알림장 첨부 사진

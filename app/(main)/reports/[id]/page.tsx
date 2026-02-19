@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/lib/auth/auth-context";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { DAILY_RECORD_TITLES, getDailyRecordLabel } from "@/components/reports/daily-record-form";
 
 interface ReportDetail {
   id: string;
@@ -18,6 +19,14 @@ interface ReportDetail {
   media: { id: string; url: string }[];
   isRead?: boolean;
   readAt?: string | null;
+  dailyRecord?: {
+    mood?: string | null;
+    health?: string | null;
+    temperatureCheck?: string | null;
+    mealStatus?: string | null;
+    sleepTime?: string | null;
+    bowelStatus?: string | null;
+  } | null;
 }
 
 interface Comment {
@@ -129,12 +138,12 @@ export default function ReportDetailPage() {
   }, [comments.length, scheduledComments.length]);
 
   useEffect(() => {
-    if (report && profile?.role === "GUARDIAN" && !report.isRead) {
+    if (report && !report.isRead) {
       fetch(`/api/reports/${reportId}/read`, { method: "POST" }).then(() => {
         fetchReport(true);
       });
     }
-  }, [report?.id, report?.isRead, profile?.role, reportId]);
+  }, [report?.id, report?.isRead, reportId]);
 
   // Supabase Realtime: 댓글 INSERT/UPDATE/DELETE 시 즉시 반영
   useEffect(() => {
@@ -433,6 +442,29 @@ export default function ReportDetailPage() {
             </div>
 
             <div className="mt-4 whitespace-pre-wrap text-zinc-700">{report.content}</div>
+
+            {report.dailyRecord &&
+              ["mood", "health", "temperatureCheck", "mealStatus", "sleepTime", "bowelStatus"].some(
+                (k) => report.dailyRecord![k as keyof typeof report.dailyRecord]
+              ) && (
+              <div className="mt-4 rounded-lg border border-zinc-100 bg-zinc-50 p-4">
+                <h3 className="mb-3 text-sm font-semibold text-zinc-700">생활기록</h3>
+                <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                  {(["mood", "health", "temperatureCheck", "mealStatus", "sleepTime", "bowelStatus"] as const).map(
+                    (key) => {
+                      const val = report.dailyRecord?.[key];
+                      if (!val) return null;
+                      return (
+                        <div key={key} className="flex gap-2">
+                          <dt className="text-zinc-500">{DAILY_RECORD_TITLES[key]}</dt>
+                          <dd className="text-zinc-900">{getDailyRecordLabel(key, val)}</dd>
+                        </div>
+                      );
+                    }
+                  )}
+                </dl>
+              </div>
+            )}
 
             {report.media.length > 0 && (
               <div className="mt-4 flex flex-wrap gap-2">

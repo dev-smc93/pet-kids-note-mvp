@@ -3,6 +3,28 @@ import { prisma } from "@/lib/prisma";
 import { getAuthUser, requireAdmin } from "@/lib/api/auth";
 
 const MAX_CONTENT_LENGTH = 5000;
+
+const VALID_DAILY_RECORD = {
+  mood: ["GOOD", "NORMAL", "BAD"],
+  health: ["GOOD", "NORMAL", "BAD"],
+  temperatureCheck: ["NORMAL", "LOW_FEVER", "HIGH_FEVER"],
+  mealStatus: ["NORMAL_AMOUNT", "A_LOT", "A_LITTLE", "NONE"],
+  sleepTime: ["NONE", "UNDER_1H", "1H_1H30", "1H30_2H", "OVER_2H"],
+  bowelStatus: ["NORMAL", "HARD", "LOOSE", "DIARRHEA", "NONE"],
+} as const;
+
+function sanitizeDailyRecord(dr: unknown): Record<string, string> | null {
+  if (!dr || typeof dr !== "object") return null;
+  const obj = dr as Record<string, unknown>;
+  const result: Record<string, string> = {};
+  for (const [key, validValues] of Object.entries(VALID_DAILY_RECORD)) {
+    const val = obj[key];
+    if (typeof val === "string" && (validValues as readonly string[]).includes(val)) {
+      result[key] = val;
+    }
+  }
+  return Object.keys(result).length > 0 ? result : null;
+}
 const MAX_MEDIA = 10;
 
 async function getReportWithAuth(reportId: string, profile: { userId: string; role: string }) {
@@ -13,6 +35,7 @@ async function getReportWithAuth(reportId: string, profile: { userId: string; ro
       author: { select: { name: true } },
       media: true,
       reportReads: true,
+      dailyRecord: true,
     },
   });
   if (!report) return null;
@@ -50,11 +73,22 @@ export async function GET(
   }
 
   const guardianRead = report.reportReads.find((r) => r.userId === report.pet.ownerUserId);
+  const adminRead = report.reportReads.find((r) => r.userId === profile!.userId);
   const { reportReads, ...rest } = report;
   return NextResponse.json({
     ...rest,
-    isRead: profile!.role === "GUARDIAN" ? !!guardianRead : undefined,
-    readAt: guardianRead?.readAt ?? null,
+    isRead:
+      profile!.role === "GUARDIAN"
+        ? !!guardianRead
+        : profile!.role === "ADMIN"
+          ? !!adminRead
+          : undefined,
+    readAt:
+      profile!.role === "GUARDIAN"
+        ? guardianRead?.readAt ?? null
+        : profile!.role === "ADMIN"
+          ? adminRead?.readAt ?? null
+          : null,
   });
 }
 
@@ -74,9 +108,9 @@ export async function PATCH(
   }
 
   const body = await request.json();
-  const { content, mediaUrls } = body;
+  const { content, mediaUrls, dailyRecord } = body;
 
-  const data: { content?: string; media?: object } = {};
+  const data: { content?: string; media?: object; dailyRecord?: object } = {};
 
   if (typeof content === "string") {
     if (content.length > MAX_CONTENT_LENGTH) {
@@ -104,6 +138,20 @@ export async function PATCH(
     };
   }
 
+  const dr = sanitizeDailyRecord(dailyRecord);
+  if (dailyRecord !== undefined) {
+    if (dr) {
+      data.dailyRecord = {
+        upsert: {
+          create: dr,
+          update: dr,
+        },
+      };
+    } else {
+      data.dailyRecord = { delete: true };
+    }
+  }
+
   const updated = await prisma.report.update({
     where: { id },
     data,
@@ -111,6 +159,7 @@ export async function PATCH(
       pet: { select: { id: true, name: true } },
       author: { select: { name: true } },
       media: true,
+      dailyRecord: true,
     },
   });
 

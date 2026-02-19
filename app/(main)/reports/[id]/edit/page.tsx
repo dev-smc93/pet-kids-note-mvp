@@ -11,6 +11,14 @@ interface ReportData {
   content: string;
   pet: { id: string; name: string };
   media: { id: string; url: string }[];
+  dailyRecord?: {
+    mood?: string;
+    health?: string;
+    temperatureCheck?: string;
+    mealStatus?: string;
+    sleepTime?: string;
+    bowelStatus?: string;
+  } | null;
 }
 
 export default function ReportEditPage() {
@@ -19,6 +27,7 @@ export default function ReportEditPage() {
   const { profile, isLoading } = useAuth();
   const router = useRouter();
   const [report, setReport] = useState<ReportData | null>(null);
+  const [isLoadingReport, setIsLoadingReport] = useState(true);
 
   useEffect(() => {
     if (!isLoading && profile?.role !== "ADMIN") {
@@ -26,10 +35,19 @@ export default function ReportEditPage() {
       return;
     }
     if (profile?.role === "ADMIN") {
+      setIsLoadingReport(true);
       fetch(`/api/reports/${reportId}`)
         .then((res) => (res.ok ? res.json() : null))
-        .then(setReport)
-        .catch(() => setReport(null));
+        .then((data) => {
+          setReport(data);
+          setIsLoadingReport(false);
+        })
+        .catch(() => {
+          setReport(null);
+          setIsLoadingReport(false);
+        });
+    } else {
+      setIsLoadingReport(false);
     }
   }, [profile, isLoading, router, reportId]);
 
@@ -37,6 +55,25 @@ export default function ReportEditPage() {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-zinc-300 border-t-zinc-900" />
+      </div>
+    );
+  }
+
+  if (isLoadingReport) {
+    return (
+      <div className="flex min-h-screen flex-col bg-zinc-50">
+        <header className="sticky top-0 z-10 flex items-center justify-between bg-red-500 px-4 py-3">
+          <Link href={`/reports/${reportId}`} className="flex h-10 w-10 items-center justify-center text-white">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="m15 18-6-6 6-6" />
+            </svg>
+          </Link>
+          <h1 className="text-lg font-semibold text-white">알림장 수정</h1>
+          <div className="h-10 w-10" />
+        </header>
+        <main className="flex flex-1 items-center justify-center px-4 py-6">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-zinc-300 border-t-zinc-900" />
+        </main>
       </div>
     );
   }

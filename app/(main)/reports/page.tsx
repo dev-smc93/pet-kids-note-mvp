@@ -16,6 +16,8 @@ interface ReportItem {
   commentCount?: number;
   /** 관리자용: 보호자 읽음 여부 */
   isReadByGuardian?: boolean;
+  /** 관리자용: 관리자 본인 읽음 여부 */
+  isReadByAdmin?: boolean;
   /** 관리자용: 보호자 이름 */
   guardianName?: string;
   /** 관리자용: 알림장 작성한 원 명칭 */
@@ -245,7 +247,7 @@ export default function ReportsPage() {
                       <div
                         className={`flex gap-4 rounded-lg p-4 shadow-sm transition ${
                           (profile.role === "GUARDIAN" && !r.isRead) ||
-                          (profile.role === "ADMIN" && r.isReadByGuardian === false)
+                          (profile.role === "ADMIN" && r.isReadByAdmin === false)
                             ? "bg-amber-50 hover:bg-amber-100"
                             : "bg-white hover:bg-zinc-50"
                         } ${profile.role === "GUARDIAN" && !r.isRead ? "border-l-4 border-amber-500" : ""}`}
