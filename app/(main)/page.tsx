@@ -21,7 +21,7 @@ export default function HomePage() {
   }, [profile?.role]);
 
   useEffect(() => {
-    if (profile?.role === "GUARDIAN") {
+    if (profile?.role === "GUARDIAN" || profile?.role === "ADMIN") {
       fetch("/api/reports/unread-count")
         .then((res) => (res.ok ? res.json() : { count: 0 }))
         .then((data) => setUnreadReportCount(data.count ?? 0))
@@ -62,11 +62,16 @@ export default function HomePage() {
               {profile.role === "ADMIN" && (
                 <div className="space-y-3">
                   <Link href="/reports" className="block">
-                    <div className="rounded-lg bg-white p-4 shadow-sm transition hover:bg-zinc-50">
+                    <div className="relative rounded-lg bg-white p-4 shadow-sm transition hover:bg-zinc-50">
                       <h2 className="font-medium text-zinc-900">알림장</h2>
                       <p className="text-sm text-zinc-500">
                         작성한 알림장 목록
                       </p>
+                      {unreadReportCount > 0 && (
+                        <span className="absolute right-4 top-4 flex h-6 min-w-6 items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-medium text-white">
+                          {unreadReportCount > 99 ? "99+" : unreadReportCount}
+                        </span>
+                      )}
                     </div>
                   </Link>
                   <Link href="/groups" className="block">

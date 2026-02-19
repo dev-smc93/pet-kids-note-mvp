@@ -75,10 +75,12 @@ export async function GET(
   const guardianRead = report.reportReads.find((r) => r.userId === report.pet.ownerUserId);
   const adminRead = report.reportReads.find((r) => r.userId === profile!.userId);
   const isGuardianPost = report.authorUserId === report.pet.ownerUserId;
+  const isReadByGuardian = !!guardianRead;
   const { reportReads, ...rest } = report;
   return NextResponse.json({
     ...rest,
     isGuardianPost,
+    isReadByGuardian,
     isRead:
       profile!.role === "GUARDIAN"
         ? !!guardianRead

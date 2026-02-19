@@ -22,6 +22,7 @@ interface ReportDetail {
   author: { name: string };
   media: { id: string; url: string }[];
   isGuardianPost?: boolean;
+  isReadByGuardian?: boolean;
   isRead?: boolean;
   readAt?: string | null;
   dailyRecord?: {
@@ -411,7 +412,7 @@ export default function ReportDetailPage() {
   const headerActions =
     profile.role === "ADMIN" ? (
       <div className="flex items-center gap-1">
-        {!report.readAt && !report.isGuardianPost && (
+        {!report.isReadByGuardian && !report.isGuardianPost && (
           <button
             type="button"
             onClick={handleRemind}

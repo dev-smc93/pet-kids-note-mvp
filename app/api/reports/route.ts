@@ -54,7 +54,10 @@ export async function GET(request: Request) {
     }
 
     const reports = await prisma.report.findMany({
-      where: petId ? { petId, pet: { ownerUserId: profile!.userId } } : { petId: { in: petIds } },
+      where: {
+        ...(petId ? { petId, pet: { ownerUserId: profile!.userId } } : { petId: { in: petIds } }),
+        ...(mineOnly ? { authorUserId: profile!.userId } : {}),
+      },
       include: {
         pet: {
           include: {
@@ -257,6 +260,10 @@ export async function POST(request: Request) {
             }
           : undefined,
       dailyRecord: dr ? { create: dr } : undefined,
+      reportReads:
+        profile!.role === "ADMIN"
+          ? { create: { userId: profile!.userId } }
+          : undefined,
     },
     include: {
       pet: { select: { id: true, name: true } },

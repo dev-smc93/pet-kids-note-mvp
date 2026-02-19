@@ -76,7 +76,7 @@ export default function ReportsPage() {
       setIsLoadingReports(true);
       const params = new URLSearchParams();
       if (groupIds.length > 0) params.set("groupIds", groupIds.join(","));
-      if (profile.role === "ADMIN" && mineOnly) params.set("mineOnly", "true");
+      if (mineOnly) params.set("mineOnly", "true");
       const url = `/api/reports${params.toString() ? `?${params.toString()}` : ""}`;
       fetch(url)
         .then((res) => (res.ok ? res.json() : []))
@@ -291,10 +291,10 @@ export default function ReportsPage() {
                       <div
                         className={`flex gap-4 rounded-lg p-4 shadow-sm transition ${
                           (profile.role === "GUARDIAN" && !r.isRead && !r.isGuardianPost) ||
-                          (profile.role === "ADMIN" && r.isReadByAdmin === false)
+                          (profile.role === "ADMIN" && r.isReadByAdmin === false && r.authorUserId !== profile?.userId)
                             ? "bg-amber-50 hover:bg-amber-100"
                             : "bg-white hover:bg-zinc-50"
-                        } ${profile.role === "GUARDIAN" && !r.isRead && !r.isGuardianPost ? "border-l-4 border-amber-500" : ""}`}
+                        } ${(profile.role === "GUARDIAN" && !r.isRead && !r.isGuardianPost) || (profile.role === "ADMIN" && r.isReadByAdmin === false && r.authorUserId !== profile?.userId) ? "border-l-4 border-amber-500" : ""}`}
                       >
                         {/* 좌측: 날짜, 요일 */}
                         <div className="flex shrink-0 flex-col items-center border-r border-zinc-100 pr-4">
@@ -311,6 +311,11 @@ export default function ReportsPage() {
                           <p className="mt-0.5 line-clamp-2 text-sm text-zinc-600">{r.content}</p>
                           <div className="mt-1.5 flex items-center gap-2">
                             {profile.role === "GUARDIAN" && !r.isRead && !r.isGuardianPost && (
+                              <span className="rounded bg-amber-100 px-1.5 py-0.5 text-xs text-amber-800">
+                                새 알림
+                              </span>
+                            )}
+                            {profile.role === "ADMIN" && r.isReadByAdmin === false && r.authorUserId !== profile?.userId && (
                               <span className="rounded bg-amber-100 px-1.5 py-0.5 text-xs text-amber-800">
                                 새 알림
                               </span>
@@ -332,7 +337,7 @@ export default function ReportsPage() {
                                   <rect width="20" height="16" x="2" y="4" rx="2" />
                                   <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
                                 </svg>
-                                미수신
+                                보호자 미수신
                               </span>
                             )}
                             {r.commentCount !== undefined && r.commentCount > 0 && (

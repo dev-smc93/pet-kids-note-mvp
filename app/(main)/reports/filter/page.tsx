@@ -67,7 +67,7 @@ export default function ReportsFilterPage() {
   const handleApply = () => {
     const params = new URLSearchParams();
     if (selectedGroupIds.length > 0) params.set("groupIds", selectedGroupIds.join(","));
-    if (profile?.role === "ADMIN" && mineOnly) params.set("mineOnly", "true");
+    if (mineOnly) params.set("mineOnly", "true");
     router.push(`/reports${params.toString() ? `?${params.toString()}` : ""}`);
   };
 
@@ -156,11 +156,13 @@ export default function ReportsFilterPage() {
             </div>
           </section>
 
-          {profile?.role === "ADMIN" && (
+          {(profile?.role === "ADMIN" || profile?.role === "GUARDIAN") && (
             <section>
               <h2 className="mb-3 text-sm font-medium text-zinc-700">보기 옵션</h2>
               <label className="flex cursor-pointer items-center justify-between rounded-lg border border-zinc-200 bg-white p-4 shadow-sm">
-                <span className="font-medium text-zinc-900">내가 쓴 글만 보기</span>
+                <span className="font-medium text-zinc-900">
+                  {profile?.role === "ADMIN" ? "내가 쓴 글만 보기" : "내가 쓴 글(보호자)만 보기"}
+                </span>
                 <button
                   type="button"
                   role="switch"
