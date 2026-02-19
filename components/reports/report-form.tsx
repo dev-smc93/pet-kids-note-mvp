@@ -217,7 +217,7 @@ export function ReportForm({
     <form
       id={formId}
       onSubmit={handleSubmit}
-      className="flex w-full max-w-md flex-col gap-4"
+      className="flex w-full max-w-md flex-col gap-4 pb-24"
     >
       {isEdit && (
         <div className="flex overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-sm">
@@ -353,19 +353,13 @@ export function ReportForm({
           onChange={(e) => setContent(e.target.value)}
           placeholder="오늘의 돌봄 내용을 입력해주세요."
           className="w-full rounded-lg border border-zinc-300 bg-white px-4 py-3 text-base text-zinc-900 placeholder-zinc-400 focus:border-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-200"
-          rows={6}
+          rows={8}
           maxLength={MAX_CONTENT}
         />
         <p className="mt-1 text-right text-xs text-zinc-500">
           {content.length}/{MAX_CONTENT}
         </p>
       </div>
-
-      <DailyRecordForm
-        value={dailyRecord}
-        onChange={setDailyRecord}
-        defaultCollapsed={true}
-      />
 
       <div className="w-full">
         <label className="mb-1.5 block text-sm font-medium text-zinc-700">
@@ -406,6 +400,12 @@ export function ReportForm({
           {mediaUrls.length}장 / 최대 {MAX_PHOTOS}장
         </p>
       </div>
+
+      <DailyRecordForm
+        value={dailyRecord}
+        onChange={setDailyRecord}
+        defaultCollapsed={true}
+      />
 
       {!hideActions && !isEdit && (
         <div className="flex gap-3">

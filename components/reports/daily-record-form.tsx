@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 
 export interface DailyRecordData {
   mood?: string;
@@ -138,13 +139,34 @@ export function DailyRecordForm({
   );
 
   return (
-    <div className="overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-sm">
-      <button
-        type="button"
-        onClick={() => setIsOpen((v) => !v)}
-        className="flex w-full items-center justify-between bg-red-500 px-4 py-3 text-left text-white"
-      >
-        <div className="flex items-center gap-2">
+    <div className="w-full">
+      {/* 플레이스홀더: 고정 버튼 공간 확보 */}
+      <div className="h-14" aria-hidden />
+      {/* 고정 버튼 */}
+      <div className="fixed inset-x-0 bottom-0 z-40 mx-auto max-w-md px-4 pb-6">
+        <button
+          type="button"
+          onClick={() => setIsOpen((v) => !v)}
+          className="flex w-full items-center justify-between rounded-lg border border-zinc-200 bg-red-500 px-4 py-3 text-left text-white shadow-lg"
+        >
+          <div className="flex items-center gap-2">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M12 20h9" />
+              <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+            </svg>
+            <span className="font-semibold">생활기록</span>
+            <span className="text-red-200">*</span>
+          </div>
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="20"
@@ -153,62 +175,83 @@ export function DailyRecordForm({
             fill="none"
             stroke="currentColor"
             strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
+            className={`transition-transform duration-300 ${isOpen ? "rotate-180" : ""}`}
           >
-            <path d="M12 20h9" />
-            <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+            <path d="m6 15 6-6 6 6" />
           </svg>
-          <span className="font-semibold">생활기록</span>
-          <span className="text-red-200">*</span>
-        </div>
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="20"
-          height="20"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          className={`transition-transform ${isOpen ? "rotate-180" : ""}`}
-        >
-          <path d="m6 9 6 6 6-6" />
-        </svg>
-      </button>
-      {isOpen && (
-        <div className="space-y-6 border-t border-zinc-100 p-4">
-          <OptionGroup
-            title="기분"
-            field="mood"
-            options={DAILY_RECORD_OPTIONS.mood}
-          />
-          <OptionGroup
-            title="건강"
-            field="health"
-            options={DAILY_RECORD_OPTIONS.health}
-          />
-          <OptionGroup
-            title="체온체크"
-            field="temperatureCheck"
-            options={DAILY_RECORD_OPTIONS.temperatureCheck}
-          />
-          <OptionGroup
-            title="식사여부"
-            field="mealStatus"
-            options={DAILY_RECORD_OPTIONS.mealStatus}
-          />
-          <OptionGroup
-            title="수면시간"
-            field="sleepTime"
-            options={DAILY_RECORD_OPTIONS.sleepTime}
-          />
-          <OptionGroup
-            title="배변상태"
-            field="bowelStatus"
-            options={DAILY_RECORD_OPTIONS.bowelStatus}
-          />
-        </div>
-      )}
+        </button>
+      </div>
+      {/* 오버레이 패널 */}
+      <AnimatePresence>
+        {isOpen && (
+          <>
+            <motion.div
+              key="backdrop"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="fixed inset-0 z-40 bg-black/40"
+              onClick={() => setIsOpen(false)}
+              aria-hidden
+            />
+            <motion.div
+              key="panel"
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "tween", duration: 0.3, ease: "easeOut" }}
+              className="fixed inset-x-0 bottom-0 z-50 mx-auto max-h-[85vh] max-w-md overflow-y-auto rounded-t-2xl border border-b-0 border-zinc-200 bg-white shadow-[0_-4px_20px_rgba(0,0,0,0.1)]"
+            >
+              <div className="sticky top-0 z-10 flex items-center justify-between border-b border-zinc-100 bg-white px-4 py-3">
+                <span className="font-semibold text-zinc-900">생활기록</span>
+                <button
+                  type="button"
+                  onClick={() => setIsOpen(false)}
+                  className="rounded-full p-2 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-700"
+                  aria-label="닫기"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M18 6 6 18M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              <div className="space-y-6 p-4">
+                <OptionGroup
+                  title="기분"
+                  field="mood"
+                  options={DAILY_RECORD_OPTIONS.mood}
+                />
+                <OptionGroup
+                  title="건강"
+                  field="health"
+                  options={DAILY_RECORD_OPTIONS.health}
+                />
+                <OptionGroup
+                  title="체온체크"
+                  field="temperatureCheck"
+                  options={DAILY_RECORD_OPTIONS.temperatureCheck}
+                />
+                <OptionGroup
+                  title="식사여부"
+                  field="mealStatus"
+                  options={DAILY_RECORD_OPTIONS.mealStatus}
+                />
+                <OptionGroup
+                  title="수면시간"
+                  field="sleepTime"
+                  options={DAILY_RECORD_OPTIONS.sleepTime}
+                />
+                <OptionGroup
+                  title="배변상태"
+                  field="bowelStatus"
+                  options={DAILY_RECORD_OPTIONS.bowelStatus}
+                />
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
