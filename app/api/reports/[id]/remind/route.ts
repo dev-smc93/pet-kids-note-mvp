@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/api/auth";
+import { sendPushToUser } from "@/lib/push/send-push";
 
 // POST: 재알림 (관리자) - MVP에서는 표시/버튼만, 실제 푸시는 추후
 export async function POST(
@@ -50,9 +51,14 @@ export async function POST(
     });
   }
 
-  // MVP: 재알림 버튼 동작만 (실제 푸시 알림은 2차)
+  sendPushToUser(guardianUserId, {
+    title: "알림장 재알림",
+    body: `${report.pet.name} 알림장을 확인해주세요.`,
+    url: `/reports/${reportId}`,
+  }).catch(() => {});
+
   return NextResponse.json({
     success: true,
-    message: "재알림 요청이 완료되었습니다. (푸시 알림은 추후 적용 예정)",
+    message: "재알림 요청이 완료되었습니다.",
   });
 }

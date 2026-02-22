@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getAuthUser } from "@/lib/api/auth";
+import { sendPushToUser } from "@/lib/push/send-push";
 import { fetchReportsList } from "@/lib/api/fetch-reports";
 
 const MAX_CONTENT_LENGTH = 5000;
@@ -138,11 +139,20 @@ export async function POST(request: Request) {
           : undefined,
     },
     include: {
-      pet: { select: { id: true, name: true } },
+      pet: { select: { id: true, name: true, ownerUserId: true } },
       author: { select: { name: true } },
       media: true,
     },
   });
+
+  const guardianUserId = report.pet.ownerUserId;
+  if (guardianUserId !== profile!.userId) {
+    sendPushToUser(guardianUserId, {
+      title: "새 알림장이 등록되었습니다",
+      body: `${report.pet.name} - ${report.author.name}`,
+      url: `/reports/${report.id}`,
+    }).catch(() => {});
+  }
 
   return NextResponse.json(report);
 }

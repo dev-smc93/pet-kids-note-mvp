@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth/auth-context";
+import { PushSubscriptionToggle } from "@/components/push/push-subscription-toggle";
 
 export function ProfileForm() {
   const [name, setName] = useState("");
@@ -121,6 +122,8 @@ export function ProfileForm() {
           </label>
         </div>
       </div>
+
+      <PushSubscriptionToggle />
 
       <Button type="submit" fullWidth isLoading={isLoading}>
         {profile ? "저장" : "완료"}

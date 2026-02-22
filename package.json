@@ -11,7 +11,8 @@
     "lint": "eslint",
     "db:seed": "prisma db seed",
     "db:reset": "tsx scripts/reset-db.ts",
-    "db:delete-a-group": "tsx scripts/delete-a-group.ts"
+    "db:delete-a-group": "tsx scripts/delete-a-group.ts",
+    "push:vapid": "node scripts/generate-vapid-keys.mjs"
   },
   "dependencies": {
     "@ducanh2912/next-pwa": "^10.2.9",
@@ -26,7 +27,8 @@
     "pg": "^8.18.0",
     "react": "19.2.3",
     "react-dom": "19.2.3",
-    "swiper": "^12.1.2"
+    "swiper": "^12.1.2",
+    "web-push": "^3.6.7"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

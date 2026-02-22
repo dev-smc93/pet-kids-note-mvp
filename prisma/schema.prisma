@@ -24,10 +24,26 @@ model Profile {
   memberships      Membership[]
   ownedPets        Pet[]           @relation("PetOwner")
   authoredReports Report[]        @relation("ReportAuthor")
-  reportReads     ReportRead[]
-  reportComments  ReportComment[] @relation("ReportCommentAuthor")
+  reportReads       ReportRead[]
+  reportComments   ReportComment[] @relation("ReportCommentAuthor")
+  pushSubscriptions PushSubscription[]
 
   @@map("profiles")
+}
+
+// push_subscriptions - Web Push 구독 (푸시 알람용)
+model PushSubscription {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  endpoint  String   @db.Text
+  p256dh    String   @db.Text
+  auth      String   @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user Profile @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@unique([userId, endpoint])
+  @@map("push_subscriptions")
 }
 
 // Role - 사용자 역할 (관리자/보호자)

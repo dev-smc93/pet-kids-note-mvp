@@ -119,9 +119,9 @@ Vercel 배포 완료 후 적용 가능
 
 ### B. 푸시 알람
 
-- [ ] 알림장 등록 시 보호자에게 푸시 알람
-- [ ] 댓글 등록 시 상대방에게 푸시 알람
-- [ ] 재알림 버튼 클릭 시 미열람 보호자에게 푸시 알람 (현재: 버튼/메시지만)
+- [x] 알림장 등록 시 보호자에게 푸시 알람
+- [x] 댓글 등록 시 상대방에게 푸시 알람
+- [x] 재알림 버튼 클릭 시 미열람 보호자에게 푸시 알람
 
 ### C. QA 및 마무리
 
@@ -191,6 +191,8 @@ npm run dev
 
 **Supabase Realtime**: 알림장 댓글 실시간 반영을 위해 `report_comments` 테이블을 Realtime publication에 추가해야 합니다.  
 → Supabase 대시보드 > Database > Publications > `supabase_realtime`에서 `report_comments` 체크, 또는 `supabase/enable_realtime_report_comments.sql` 실행
+
+**푸시 알람**: `npm run push:vapid`로 VAPID 키 생성 후 `.env`에 `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` 추가. DB 마이그레이션 `prisma migrate deploy` 실행 필요.
 
 ---
 

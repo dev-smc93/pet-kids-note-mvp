@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getAuthUser } from "@/lib/api/auth";
+import { sendPushToUser } from "@/lib/push/send-push";
 
 // GET: 댓글 목록 (또는 예약 댓글: ?scheduled=true)
 export async function GET(
@@ -151,6 +152,33 @@ export async function POST(
     },
     include: { author: { select: { userId: true, name: true, role: true } } },
   });
+
+  if (!scheduledAtDate) {
+    const recipientUserIds: string[] = [];
+    if (profile!.userId === report.pet.ownerUserId) {
+      const groups = await prisma.group.findMany({
+        where: {
+          memberships: {
+            some: { petId: report.petId, status: "APPROVED" },
+          },
+        },
+        select: { ownerUserId: true },
+      });
+      recipientUserIds.push(...groups.map((g) => g.ownerUserId));
+    } else {
+      recipientUserIds.push(report.pet.ownerUserId);
+    }
+    const uniqueRecipients = [...new Set(recipientUserIds)].filter(
+      (id) => id !== profile!.userId
+    );
+    for (const userId of uniqueRecipients) {
+      sendPushToUser(userId, {
+        title: "알림장에 새 댓글이 달렸습니다",
+        body: comment.content.slice(0, 50) + (comment.content.length > 50 ? "…" : ""),
+        url: `/reports/${reportId}`,
+      }).catch(() => {});
+    }
+  }
 
   return NextResponse.json(comment);
 }
