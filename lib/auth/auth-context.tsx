@@ -74,9 +74,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } = await supabase.auth.getUser();
       setUser(currentUser ?? null);
       if (currentUser) {
-        const isReportsListPage = pathname === "/reports";
+        const isServerDataPage = pathname === "/reports" || pathname === "/";
         setIsProfileLoading(true);
-        if (!isReportsListPage) {
+        if (!isServerDataPage) {
           fetchProfile(currentUser.id).finally(() => setIsProfileLoading(false));
         }
       }

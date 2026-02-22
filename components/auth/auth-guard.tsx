@@ -21,7 +21,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    if (user && !profile && !pathname.startsWith("/auth/profile") && pathname !== "/reports") {
+    if (user && !profile && !pathname.startsWith("/auth/profile") && pathname !== "/reports" && pathname !== "/") {
       router.replace("/auth/profile");
       return;
     }
@@ -37,7 +37,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
 
   const isAuthPath = AUTH_PATHS.some((p) => pathname.startsWith(p));
   if (!user && !isAuthPath) return null;
-  if (user && !profile && !pathname.startsWith("/auth/profile") && pathname !== "/reports") return null;
+  if (user && !profile && !pathname.startsWith("/auth/profile") && pathname !== "/reports" && pathname !== "/") return null;
 
   return <>{children}</>;
 }
