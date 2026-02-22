@@ -14,7 +14,10 @@ export async function GET() {
     });
     const petIds = pets.map((p) => p.id);
     if (petIds.length === 0) {
-      return NextResponse.json({ count: 0 });
+      return NextResponse.json(
+        { count: 0 },
+        { headers: { "Cache-Control": "private, max-age=10, stale-while-revalidate=30" } }
+      );
     }
     const count = await prisma.report.count({
       where: {
@@ -23,7 +26,10 @@ export async function GET() {
         reportReads: { none: { userId: profile!.userId } },
       },
     });
-    return NextResponse.json({ count });
+    return NextResponse.json(
+      { count },
+      { headers: { "Cache-Control": "private, max-age=10, stale-while-revalidate=30" } }
+    );
   }
 
   if (profile!.role === "ADMIN") {
@@ -33,7 +39,10 @@ export async function GET() {
     });
     const groupIds = groups.map((g) => g.id);
     if (groupIds.length === 0) {
-      return NextResponse.json({ count: 0 });
+      return NextResponse.json(
+        { count: 0 },
+        { headers: { "Cache-Control": "private, max-age=10, stale-while-revalidate=30" } }
+      );
     }
     const memberships = await prisma.membership.findMany({
       where: { groupId: { in: groupIds }, status: "APPROVED" },
@@ -41,7 +50,10 @@ export async function GET() {
     });
     const petIds = [...new Set(memberships.map((m) => m.petId))];
     if (petIds.length === 0) {
-      return NextResponse.json({ count: 0 });
+      return NextResponse.json(
+        { count: 0 },
+        { headers: { "Cache-Control": "private, max-age=10, stale-while-revalidate=30" } }
+      );
     }
     const count = await prisma.report.count({
       where: {
@@ -50,8 +62,14 @@ export async function GET() {
         reportReads: { none: { userId: profile!.userId } },
       },
     });
-    return NextResponse.json({ count });
+    return NextResponse.json(
+      { count },
+      { headers: { "Cache-Control": "private, max-age=10, stale-while-revalidate=30" } }
+    );
   }
 
-  return NextResponse.json({ count: 0 });
+  return NextResponse.json(
+    { count: 0 },
+    { headers: { "Cache-Control": "private, max-age=10, stale-while-revalidate=30" } }
+  );
 }

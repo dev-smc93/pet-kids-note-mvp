@@ -49,7 +49,9 @@ export async function GET(request: Request) {
     groupIds: filterGroupIds,
     mineOnly,
   });
-  return NextResponse.json(reports);
+  return NextResponse.json(reports, {
+    headers: { "Cache-Control": "private, max-age=30, stale-while-revalidate=60" },
+  });
 }
 
 // POST: 알림장 작성 (관리자 + 보호자, 보호자는 생활기록 제외)

@@ -57,7 +57,9 @@ export async function GET(
       include: { author: { select: { userId: true, name: true, role: true } } },
       orderBy: { scheduledAt: "asc" },
     });
-    return NextResponse.json(scheduled);
+    return NextResponse.json(scheduled, {
+      headers: { "Cache-Control": "private, max-age=10, stale-while-revalidate=30" },
+    });
   }
 
   const comments = await prisma.reportComment.findMany({
@@ -72,7 +74,9 @@ export async function GET(
     orderBy: { createdAt: "asc" },
   });
 
-  return NextResponse.json(comments);
+  return NextResponse.json(comments, {
+    headers: { "Cache-Control": "private, max-age=10, stale-while-revalidate=30" },
+  });
 }
 
 // POST: 댓글 작성

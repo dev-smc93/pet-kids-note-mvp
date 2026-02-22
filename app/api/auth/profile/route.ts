@@ -22,7 +22,9 @@ export async function GET() {
       return NextResponse.json({ error: "프로필을 찾을 수 없습니다." }, { status: 404 });
     }
 
-    return NextResponse.json(profile);
+    return NextResponse.json(profile, {
+      headers: { "Cache-Control": "private, max-age=60, stale-while-revalidate=120" },
+    });
   } catch (error) {
     console.error("Profile GET error:", error);
     return NextResponse.json(

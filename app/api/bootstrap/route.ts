@@ -25,8 +25,10 @@ export async function GET(request: Request) {
     mineOnly,
   });
 
-  return NextResponse.json({
-    profile,
-    reports,
-  });
+  return NextResponse.json(
+    { profile, reports },
+    {
+      headers: { "Cache-Control": "private, max-age=30, stale-while-revalidate=60" },
+    }
+  );
 }

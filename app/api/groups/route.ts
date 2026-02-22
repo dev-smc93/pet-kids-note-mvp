@@ -36,7 +36,9 @@ export async function GET(request: Request) {
         address: true,
       },
     });
-    return NextResponse.json(groups);
+    return NextResponse.json(groups, {
+      headers: { "Cache-Control": "private, max-age=30, stale-while-revalidate=60" },
+    });
   }
 
   // 내 원 목록 (관리자)
@@ -62,7 +64,9 @@ export async function GET(request: Request) {
     };
   });
 
-  return NextResponse.json(groupsWithCounts);
+  return NextResponse.json(groupsWithCounts, {
+    headers: { "Cache-Control": "private, max-age=30, stale-while-revalidate=60" },
+  });
 }
 
 export async function POST(request: Request) {

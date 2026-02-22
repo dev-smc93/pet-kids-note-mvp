@@ -77,23 +77,28 @@ export async function GET(
   const isGuardianPost = report.authorUserId === report.pet.ownerUserId;
   const isReadByGuardian = !!guardianRead;
   const { reportReads, ...rest } = report;
-  return NextResponse.json({
-    ...rest,
-    isGuardianPost,
-    isReadByGuardian,
-    isRead:
-      profile!.role === "GUARDIAN"
-        ? !!guardianRead
-        : profile!.role === "ADMIN"
-          ? !!adminRead
-          : undefined,
-    readAt:
-      profile!.role === "GUARDIAN"
-        ? guardianRead?.readAt ?? null
-        : profile!.role === "ADMIN"
-          ? adminRead?.readAt ?? null
-          : null,
-  });
+  return NextResponse.json(
+    {
+      ...rest,
+      isGuardianPost,
+      isReadByGuardian,
+      isRead:
+        profile!.role === "GUARDIAN"
+          ? !!guardianRead
+          : profile!.role === "ADMIN"
+            ? !!adminRead
+            : undefined,
+      readAt:
+        profile!.role === "GUARDIAN"
+          ? guardianRead?.readAt ?? null
+          : profile!.role === "ADMIN"
+            ? adminRead?.readAt ?? null
+            : null,
+    },
+    {
+      headers: { "Cache-Control": "private, max-age=30, stale-while-revalidate=60" },
+    }
+  );
 }
 
 // PATCH: 알림장 수정 (관리자)
