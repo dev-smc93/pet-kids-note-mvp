@@ -98,10 +98,8 @@ report_comments(id, report_id, author_user_id, content, created_at, updated_at) 
 
 ### D. 배포 및 마무리
 
-- [ ] Vercel 배포
-- [ ] env 세팅
-- [ ] QA 및 버그픽스
-- [ ] UX 마감
+- [x] Vercel 배포
+- [x] env 세팅
 
 ---
 
@@ -109,9 +107,23 @@ report_comments(id, report_id, author_user_id, content, created_at, updated_at) 
 
 Vercel 배포 완료 후 적용 가능
 
-- manifest + 아이콘 + 서비스워커(기본 캐싱)만으로 "설치형 웹앱" 제공
-- 알림장 등록 및 댓글 등록 시 푸시 알람 추가
-- 재알림 버튼 클릭 시 보호자에게 푸시 알람 발송 (현재: 버튼/메시지만, 푸시 미적용)
+### A. PWA 설치형 웹앱
+
+- [ ] manifest.json (앱 이름, 아이콘, 테마 색상)
+- [ ] PWA 아이콘 세트 (다양한 해상도)
+- [ ] 서비스워커 (기본 캐싱) 등록
+- [ ] "홈 화면에 추가" 설치 유도 UX
+
+### B. 푸시 알람
+
+- [ ] 알림장 등록 시 보호자에게 푸시 알람
+- [ ] 댓글 등록 시 상대방에게 푸시 알람
+- [ ] 재알림 버튼 클릭 시 미열람 보호자에게 푸시 알람 (현재: 버튼/메시지만)
+
+### C. QA 및 마무리
+
+- [ ] QA 및 버그 픽스
+- [ ] 매뉴얼 작성
 
 ---
 
