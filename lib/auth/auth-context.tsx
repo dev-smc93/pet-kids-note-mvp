@@ -8,6 +8,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { usePathname } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 import type { AuthState, Profile } from "./types";
@@ -17,16 +18,24 @@ interface AuthContextValue extends AuthState {
   signUp: (email: string, password: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
+  /** bootstrap API 응답으로 profile 설정 (Reports 페이지용) */
+  setProfileFromBootstrap: (profile: Profile | null) => void;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isProfileLoading, setIsProfileLoading] = useState(false);
   const supabase = createClient();
+
+  const setProfileFromBootstrap = useCallback((p: Profile | null) => {
+    setProfile(p);
+    setIsProfileLoading(false);
+  }, []);
 
   const fetchProfile = useCallback(async (userId: string) => {
     const res = await fetch("/api/auth/profile");
@@ -65,8 +74,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } = await supabase.auth.getUser();
       setUser(currentUser ?? null);
       if (currentUser) {
+        const isReportsListPage = pathname === "/reports";
         setIsProfileLoading(true);
-        fetchProfile(currentUser.id).finally(() => setIsProfileLoading(false));
+        if (!isReportsListPage) {
+          fetchProfile(currentUser.id).finally(() => setIsProfileLoading(false));
+        }
       }
       setIsLoading(false);
     };
@@ -74,7 +86,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     init();
 
     return () => subscription.unsubscribe();
-  }, [supabase.auth, fetchProfile]);
+  }, [supabase.auth, fetchProfile, pathname]);
 
   const signIn = useCallback(
     async (email: string, password: string) => {
@@ -111,6 +123,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     signUp,
     signOut,
     refreshProfile,
+    setProfileFromBootstrap,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth/auth-context";
+import type { Profile } from "@/lib/auth/types";
 
 interface ReportItem {
   id: string;
@@ -40,7 +41,7 @@ function getMonthsFromReports(reports: ReportItem[]) {
 }
 
 export default function ReportsPage() {
-  const { profile, user, isLoading, isProfileLoading } = useAuth();
+  const { profile, user, isLoading, isProfileLoading, setProfileFromBootstrap } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const groupIdsParam = searchParams.get("groupIds");
@@ -77,22 +78,36 @@ export default function ReportsPage() {
       const params = new URLSearchParams();
       if (groupIds.length > 0) params.set("groupIds", groupIds.join(","));
       if (mineOnly) params.set("mineOnly", "true");
-      const url = `/api/reports${params.toString() ? `?${params.toString()}` : ""}`;
+      const url = `/api/bootstrap${params.toString() ? `?${params.toString()}` : ""}`;
       fetch(url)
-        .then((res) => (res.ok ? res.json() : []))
-        .then((data: ReportItem[]) => {
-          setReports(data);
-          const months = getMonthsFromReports(data);
+        .then((res) => {
+          if (!res.ok) throw new Error("Bootstrap failed");
+          return res.json();
+        })
+        .then((data: { profile: Profile; reports: ReportItem[] }) => {
+          setProfileFromBootstrap(data.profile as Profile);
+          const reportsData = data.reports ?? [];
+          setReports(reportsData);
+          const months = getMonthsFromReports(reportsData);
           if (months.length > 0) {
             setSelectedMonth((prev) => (months.includes(prev) ? prev : months[0]));
           }
         })
-        .catch(() => setReports([]))
+        .catch(async () => {
+          setReports([]);
+          const profileRes = await fetch("/api/auth/profile");
+          if (profileRes.ok) {
+            const p = await profileRes.json();
+            setProfileFromBootstrap(p);
+          } else {
+            setProfileFromBootstrap(null);
+          }
+        })
         .finally(() => setIsLoadingReports(false));
     } else {
       setIsLoadingReports(false);
     }
-  }, [user, isLoading, router, groupIds.join(","), mineOnly]);
+  }, [user, isLoading, router, groupIds.join(","), mineOnly, setProfileFromBootstrap]);
 
   const months = getMonthsFromReports(reports);
   const [year, month] = selectedMonth ? selectedMonth.split("-").map(Number) : [new Date().getFullYear(), new Date().getMonth() + 1];
