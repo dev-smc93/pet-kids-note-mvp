@@ -2,9 +2,9 @@ import { prisma } from "@/lib/prisma";
 import { getAuthUser } from "@/lib/api/auth";
 
 export async function getHomeData() {
-  const { profile, error } = await getAuthUser();
+  const { user, profile, error } = await getAuthUser();
   if (error || !profile) {
-    return { profile: null, groupCount: 0, unreadCount: 0, error };
+    return { profile: null, user: user ?? null, groupCount: 0, unreadCount: 0, error };
   }
 
   let groupCount = 0;

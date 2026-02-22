@@ -4,10 +4,13 @@ import { HomeClient } from "./home-client";
 import type { Profile } from "@/lib/auth/types";
 
 export default async function HomePage() {
-  const { profile, groupCount, unreadCount, error } = await getHomeData();
+  const { profile, user, groupCount, unreadCount, error } = await getHomeData();
 
-  if (error || !profile) {
+  if (!user) {
     redirect("/auth/login");
+  }
+  if (!profile) {
+    redirect("/auth/profile");
   }
 
   return (
