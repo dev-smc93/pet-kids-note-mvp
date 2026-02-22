@@ -45,10 +45,40 @@ export async function POST(request: Request) {
     update: {
       p256dh: keys.p256dh,
       auth: keys.auth,
+      active: true,
     },
   });
 
   return NextResponse.json({ success: true });
+}
+
+export async function PATCH(request: Request) {
+  const { profile, error } = await getAuthUser();
+  if (error) return error;
+
+  const { searchParams } = new URL(request.url);
+  const endpoint = searchParams.get("endpoint");
+  const active = searchParams.get("active");
+
+  if (!endpoint || !endpoint.trim()) {
+    return NextResponse.json(
+      { error: "endpoint가 필요합니다." },
+      { status: 400 }
+    );
+  }
+
+  const trimmedEndpoint = endpoint.trim();
+
+  // 로그아웃 시: active=false로 비활성화 (구독 유지, 푸시 미발송)
+  if (active === "false") {
+    await prisma.pushSubscription.updateMany({
+      where: { userId: profile!.userId, endpoint: trimmedEndpoint },
+      data: { active: false },
+    });
+    return NextResponse.json({ success: true });
+  }
+
+  return NextResponse.json({ error: "잘못된 요청입니다." }, { status: 400 });
 }
 
 export async function DELETE(request: Request) {
@@ -65,7 +95,7 @@ export async function DELETE(request: Request) {
     );
   }
 
-  // endpoint 기준 삭제 (동일 기기에서 이전 계정 구독이 남아있을 수 있음)
+  // 사용자가 "알림 해제" 클릭 시: 완전 삭제
   await prisma.pushSubscription.deleteMany({
     where: { endpoint: endpoint.trim() },
   });

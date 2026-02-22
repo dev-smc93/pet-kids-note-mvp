@@ -11,7 +11,7 @@ import {
 import { usePathname } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
-import { unsubscribePushOnLogout } from "@/lib/push/unsubscribe-on-logout";
+import { deactivatePushOnLogout } from "@/lib/push/unsubscribe-on-logout";
 import type { AuthState, Profile } from "./types";
 
 interface AuthContextValue extends AuthState {
@@ -110,8 +110,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const signOut = useCallback(async () => {
-    // 세션 유효 시점에 푸시 구독 해제 (signOut 전에 호출해야 DELETE API 인증 성공)
-    await unsubscribePushOnLogout();
+    // 세션 유효 시점에 푸시 비활성화 (signOut 전에 호출해야 PATCH API 인증 성공)
+    await deactivatePushOnLogout();
     await supabase.auth.signOut();
     setUser(null);
     setProfile(null);

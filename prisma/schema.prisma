@@ -38,6 +38,7 @@ model PushSubscription {
   endpoint  String   @db.Text
   p256dh    String   @db.Text
   auth      String   @db.Text
+  active    Boolean  @default(true) @map("active") // false: 로그아웃 등으로 푸시 비발송
   createdAt DateTime @default(now()) @map("created_at")
 
   user Profile @relation(fields: [userId], references: [userId], onDelete: Cascade)

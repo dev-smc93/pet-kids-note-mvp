@@ -27,7 +27,7 @@ export async function sendPushToUser(
   }
 
   const subscriptions = await prisma.pushSubscription.findMany({
-    where: { userId },
+    where: { userId, active: true },
   });
 
   if (subscriptions.length === 0) return { sent: 0, failed: 0 };

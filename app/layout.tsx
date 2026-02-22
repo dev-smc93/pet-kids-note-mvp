@@ -4,6 +4,7 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 import { AuthProvider } from "@/components/providers/auth-provider";
 import { PageTransition } from "@/components/page-transition";
 import { InstallPrompt } from "@/components/install-prompt";
+import { PushSubscriptionSync } from "@/components/push/push-subscription-sync";
 import { IMAGES } from "@/lib/constants/images";
 import "./globals.css";
 
@@ -69,6 +70,7 @@ export default function RootLayout({
     <html lang="ko">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <AuthProvider>
+          <PushSubscriptionSync />
           <PageTransition>{children}</PageTransition>
           <InstallPrompt />
           <SpeedInsights />
