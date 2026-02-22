@@ -40,7 +40,7 @@ function getMonthsFromReports(reports: ReportItem[]) {
 }
 
 export default function ReportsPage() {
-  const { profile, isLoading } = useAuth();
+  const { profile, user, isLoading, isProfileLoading } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const groupIdsParam = searchParams.get("groupIds");
@@ -68,11 +68,11 @@ export default function ReportsPage() {
   }, []);
 
   useEffect(() => {
-    if (!isLoading && !profile) {
+    if (!isLoading && !user) {
       router.replace("/auth/login");
       return;
     }
-    if (profile) {
+    if (user) {
       setIsLoadingReports(true);
       const params = new URLSearchParams();
       if (groupIds.length > 0) params.set("groupIds", groupIds.join(","));
@@ -92,7 +92,7 @@ export default function ReportsPage() {
     } else {
       setIsLoadingReports(false);
     }
-  }, [profile, isLoading, router, groupIds.join(","), mineOnly]);
+  }, [user, isLoading, router, groupIds.join(","), mineOnly]);
 
   const months = getMonthsFromReports(reports);
   const [year, month] = selectedMonth ? selectedMonth.split("-").map(Number) : [new Date().getFullYear(), new Date().getMonth() + 1];
@@ -128,7 +128,7 @@ export default function ReportsPage() {
     el.scrollBy({ top: el.clientHeight * 0.8, behavior: "smooth" });
   };
 
-  if (isLoading) {
+  if (isLoading || (user && isProfileLoading)) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-zinc-300 border-t-zinc-900" />
@@ -136,7 +136,7 @@ export default function ReportsPage() {
     );
   }
 
-  if (!profile) return null;
+  if (!user || !profile) return null;
 
   if (isLoadingReports) {
     return (
