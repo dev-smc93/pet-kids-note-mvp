@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { AuthProvider } from "@/components/providers/auth-provider";
+import { IMAGES } from "@/lib/constants/images";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -13,11 +14,38 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const APP_NAME = "반려동물 알림장";
+const APP_DESCRIPTION = "반려동물 돌봄 알림장 - MVP버전(smj)";
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "https://localhost:3000");
+
 export const metadata: Metadata = {
-  title: "반려동물 알림장",
-  description: "반려동물 돌봄 알림장",
+  title: APP_NAME,
+  description: APP_DESCRIPTION,
   icons: {
-    icon: "/images/logo/icon.svg",
+    icon: IMAGES.logo.icon,
+  },
+  metadataBase: new URL(APP_URL),
+  openGraph: {
+    type: "website",
+    locale: "ko_KR",
+    siteName: APP_NAME,
+    title: APP_NAME,
+    description: APP_DESCRIPTION,
+    url: APP_URL,
+    images: [
+      {
+        url: IMAGES.ogImage,
+        width: 1200,
+        height: 630,
+        alt: APP_NAME,
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: APP_NAME,
+    description: APP_DESCRIPTION,
+    images: [IMAGES.ogImage],
   },
 };
 
@@ -28,9 +56,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ko">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <AuthProvider>{children}</AuthProvider>
       </body>
     </html>

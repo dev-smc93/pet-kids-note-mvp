@@ -7,4 +7,6 @@ export const IMAGES = {
     appLogo: "/images/logo/app-logo.svg",
     icon: "/images/logo/icon.svg",
   },
+  /** 카카오톡/OG 공유용 이미지 (권장: 1200x630 PNG, 5MB 이하. og-image.png 추가 시 이 경로로 변경) */
+  ogImage: "/images/og-image.png",
 } as const;
