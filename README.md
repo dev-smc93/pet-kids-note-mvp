@@ -176,6 +176,9 @@ Vercel 배포 완료 후 적용 가능
 npm run dev
 ```
 
+**로컬 프로덕션 테스트** (PWA 없이): `npm run build:local` → `npm run start`  
+→ next-pwa + webpack 빌드가 로컬에서 중단될 때 사용 (Vercel 배포는 `npm run build` 사용)
+
 **PWA 아이콘 생성** (아이콘 수정 시): `npm run pwa:icons`
 
 **프로젝트 구조**  
