@@ -206,7 +206,9 @@ export function MyPetsList() {
         confirmText="삭제"
         cancelText="취소"
         variant="danger"
-        onConfirm={() => deleteTarget && handleDelete(deleteTarget.id)}
+        onConfirm={() => {
+          if (deleteTarget) handleDelete(deleteTarget.id);
+        }}
       />
     </div>
   );
