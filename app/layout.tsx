@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { AuthProvider } from "@/components/providers/auth-provider";
+import { InstallPrompt } from "@/components/install-prompt";
 import { IMAGES } from "@/lib/constants/images";
 import "./globals.css";
 
@@ -21,8 +22,16 @@ const APP_URL = process.env.NEXT_PUBLIC_APP_URL || (process.env.VERCEL_URL ? `ht
 export const metadata: Metadata = {
   title: APP_NAME,
   description: APP_DESCRIPTION,
+  manifest: "/manifest.json",
+  themeColor: "#52525b",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: APP_NAME,
+  },
   icons: {
     icon: IMAGES.logo.icon,
+    apple: "/images/icons/icon-152.png",
   },
   metadataBase: new URL(APP_URL),
   openGraph: {
@@ -57,7 +66,10 @@ export default function RootLayout({
   return (
     <html lang="ko">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <AuthProvider>{children}</AuthProvider>
+        <AuthProvider>
+          {children}
+          <InstallPrompt />
+        </AuthProvider>
       </body>
     </html>
   );
