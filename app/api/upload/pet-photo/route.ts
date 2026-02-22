@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getAuthUser } from "@/lib/api/auth";
 
 const BUCKET = "pet-photos";
-const MAX_SIZE = 5 * 1024 * 1024; // 5MB
+const MAX_SIZE = 10 * 1024 * 1024; // 10MB
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
 export async function POST(request: Request) {
@@ -37,7 +37,7 @@ export async function POST(request: Request) {
 
   if (file.size > MAX_SIZE) {
     return NextResponse.json(
-      { error: "파일 크기는 5MB 이하여야 합니다." },
+      { error: "파일 크기는 10MB 이하여야 합니다." },
       { status: 400 }
     );
   }

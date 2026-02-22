@@ -106,7 +106,7 @@ export function ReportForm({
 
     const newUrls: string[] = [];
     const allowed = ["image/jpeg", "image/png", "image/webp"];
-    const maxSize = 5 * 1024 * 1024;
+    const maxSize = 10 * 1024 * 1024;
 
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
@@ -115,7 +115,7 @@ export function ReportForm({
         return;
       }
       if (file.size > maxSize) {
-        setError("파일 크기는 5MB 이하여야 합니다.");
+        setError("파일 크기는 10MB 이하여야 합니다.");
         return;
       }
 
