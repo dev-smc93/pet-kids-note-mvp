@@ -54,8 +54,8 @@ export function ProfileForm() {
     }
 
     await refreshProfile();
-    router.push("/");
     router.refresh();
+    router.replace("/");
     setIsLoading(false);
   };
 

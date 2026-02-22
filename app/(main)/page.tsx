@@ -3,14 +3,14 @@ import { getHomeData } from "@/lib/server/home-data";
 import { HomeClient } from "./home-client";
 import type { Profile } from "@/lib/auth/types";
 
+export const dynamic = "force-dynamic";
+
 export default async function HomePage() {
   const { profile, user, groupCount, unreadCount, error } = await getHomeData();
 
-  if (!user) {
-    redirect("/auth/login");
-  }
   if (!profile) {
-    redirect("/auth/profile");
+    if (!user) redirect("/auth/login");
+    else redirect("/auth/profile");
   }
 
   return (

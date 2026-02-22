@@ -1,10 +1,10 @@
 import { ProfileForm } from "@/components/auth/profile-form";
-import { MainHeader } from "@/components/layout/main-header";
+import { ProfilePageHeader } from "@/components/auth/profile-page-header";
 
 export default function ProfilePage() {
   return (
     <div className="flex min-h-screen flex-col bg-zinc-50">
-      <MainHeader variant="back" backHref="/" backLabel="프로필 수정" />
+      <ProfilePageHeader />
       <main className="flex-1 px-4 py-6">
         <div className="mx-auto max-w-md">
           <ProfileForm />

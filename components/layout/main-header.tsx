@@ -15,13 +15,16 @@ interface MainHeaderProps {
 
 interface MainHeaderBackProps {
   variant: "back";
-  backHref: string;
-  backLabel: string;
+  backHref?: string;
+  backLabel?: string;
+  /** 클릭 시 실행 (Link 대신 사용, 예: 로그아웃 후 이동) */
+  onBackClick?: () => void;
 }
 
 export function MainHeader(props: MainHeaderProps | MainHeaderBackProps) {
+  const { profile, signOut } = useAuth();
+
   if (props.variant === "home") {
-    const { profile, signOut } = useAuth();
     return (
       <header className="sticky top-0 z-10 flex items-center justify-between border-b border-zinc-200 bg-white px-4 py-3">
         <h1>
@@ -39,13 +42,25 @@ export function MainHeader(props: MainHeaderProps | MainHeaderBackProps) {
     );
   }
 
-  const { backHref, backLabel } = props;
+  const { backHref, backLabel, onBackClick } = props;
   return (
     <header className="sticky top-0 z-10 flex items-center justify-between border-b border-zinc-200 bg-white px-4 py-3">
       <div className="flex items-center gap-2">
-        <Link href={backHref} className="text-lg font-semibold text-zinc-900 hover:underline shrink-0">
-          ← {backLabel}
-        </Link>
+        {onBackClick && backLabel ? (
+          <button
+            type="button"
+            onClick={onBackClick}
+            className="text-lg font-semibold text-zinc-900 hover:underline shrink-0 text-left"
+          >
+            ← {backLabel}
+          </button>
+        ) : backHref && backLabel ? (
+          <Link href={backHref} className="text-lg font-semibold text-zinc-900 hover:underline shrink-0">
+            ← {backLabel}
+          </Link>
+        ) : (
+          <span className="w-8" aria-hidden />
+        )}
         <AppLogo showText={false} asLink size={24} />
       </div>
     </header>
