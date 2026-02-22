@@ -22,16 +22,23 @@ export async function POST(request: Request) {
     );
   }
 
+  const trimmedEndpoint = endpoint.trim();
+
+  // 동일 endpoint는 한 기기당 한 사용자만 (다른 계정 알림 수신 방지)
+  await prisma.pushSubscription.deleteMany({
+    where: { endpoint: trimmedEndpoint },
+  });
+
   await prisma.pushSubscription.upsert({
     where: {
       userId_endpoint: {
         userId: profile!.userId,
-        endpoint: endpoint.trim(),
+        endpoint: trimmedEndpoint,
       },
     },
     create: {
       userId: profile!.userId,
-      endpoint: endpoint.trim(),
+      endpoint: trimmedEndpoint,
       p256dh: keys.p256dh,
       auth: keys.auth,
     },
@@ -51,18 +58,16 @@ export async function DELETE(request: Request) {
   const { searchParams } = new URL(request.url);
   const endpoint = searchParams.get("endpoint");
 
-  if (!endpoint) {
+  if (!endpoint || !endpoint.trim()) {
     return NextResponse.json(
       { error: "endpoint가 필요합니다." },
       { status: 400 }
     );
   }
 
+  // endpoint 기준 삭제 (동일 기기에서 이전 계정 구독이 남아있을 수 있음)
   await prisma.pushSubscription.deleteMany({
-    where: {
-      userId: profile!.userId,
-      endpoint,
-    },
+    where: { endpoint: endpoint.trim() },
   });
 
   return NextResponse.json({ success: true });
