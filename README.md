@@ -187,7 +187,7 @@ npm run dev
 **알림장 테스트 시나리오**  
 → [doc/테스트시나리오\_알림장.md](./doc/테스트시나리오_알림장.md)
 
-**Supabase Storage**: 알림장 사진 업로드 시 `report-photos` 버킷 필요 (Storage > New bucket > Public)
+**Supabase Storage**: `report-photos`, `pet-photos` 버킷 필요 (Storage > New bucket > Public). 클라이언트 직접 업로드 사용(Vercel 4.5MB 제한 회피). RLS 정책은 `supabase/storage_policies.sql` 참고
 
 **Supabase Realtime**: 알림장 댓글 실시간 반영을 위해 `report_comments` 테이블을 Realtime publication에 추가해야 합니다.  
 → Supabase 대시보드 > Database > Publications > `supabase_realtime`에서 `report_comments` 체크, 또는 `supabase/enable_realtime_report_comments.sql` 실행

@@ -6,6 +6,9 @@ import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { useAuth } from "@/lib/auth/auth-context";
+import { createClient } from "@/lib/supabase/client";
+import { uploadToStorage } from "@/lib/upload/upload-to-storage";
 
 interface GuardianPetFormProps {
   pet?: {
@@ -74,6 +77,8 @@ export function GuardianPetForm({ pet }: GuardianPetFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
+  const { user } = useAuth();
+  const supabase = createClient();
 
   useEffect(() => {
     if (selectedFile) {
@@ -118,20 +123,14 @@ export function GuardianPetForm({ pet }: GuardianPetFormProps) {
     setIsLoading(true);
 
     let finalPhotoUrl: string | null = photoUrl;
-    if (selectedFile) {
-      const formData = new FormData();
-      formData.append("file", selectedFile);
-      const uploadRes = await fetch("/api/upload/pet-photo", {
-        method: "POST",
-        body: formData,
-      });
-      const uploadData = await uploadRes.json();
-      if (!uploadRes.ok) {
-        setError(uploadData.error ?? "사진 업로드에 실패했습니다.");
+    if (selectedFile && user) {
+      const result = await uploadToStorage(supabase, "pet-photos", user.id, selectedFile);
+      if ("error" in result) {
+        setError(result.error);
         setIsLoading(false);
         return;
       }
-      finalPhotoUrl = uploadData.url;
+      finalPhotoUrl = result.url;
     }
 
     const url = pet ? `/api/pets/${pet.id}` : "/api/pets";

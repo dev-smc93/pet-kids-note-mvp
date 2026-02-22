@@ -5,6 +5,9 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { DailyRecordForm, type DailyRecordData } from "./daily-record-form";
+import { useAuth } from "@/lib/auth/auth-context";
+import { createClient } from "@/lib/supabase/client";
+import { uploadToStorage } from "@/lib/upload/upload-to-storage";
 
 interface PetOption {
   id: string;
@@ -67,8 +70,8 @@ export function ReportForm({
     );
   };
   const [content, setContent] = useState(report?.content ?? "");
-  const [mediaUrls, setMediaUrls] = useState<string[]>(
-    report?.media.map((m) => m.url) ?? []
+  const [mediaItems, setMediaItems] = useState<{ id: string; url: string; isUploading: boolean }[]>(
+    report?.media.map((m) => ({ id: m.id, url: m.url, isUploading: false })) ?? []
   );
   const [dailyRecord, setDailyRecord] = useState<DailyRecordData>(
     report?.dailyRecord 
@@ -87,6 +90,8 @@ export function ReportForm({
   const [isPetDropdownOpen, setIsPetDropdownOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const petDropdownRef = useRef<HTMLDivElement>(null);
+  const { user } = useAuth();
+  const supabase = createClient();
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -100,47 +105,69 @@ export function ReportForm({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isPetDropdownOpen]);
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
-
-    const newUrls: string[] = [];
-    const allowed = ["image/jpeg", "image/png", "image/webp"];
-    const maxSize = 10 * 1024 * 1024;
-
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
-      if (!allowed.includes(file.type)) {
-        setError("JPEG, PNG, WebP 형식만 업로드 가능합니다.");
-        return;
-      }
-      if (file.size > maxSize) {
-        setError("파일 크기는 10MB 이하여야 합니다.");
-        return;
-      }
-
-      const formData = new FormData();
-      formData.append("file", file);
-      const res = await fetch("/api/upload/report-photo", {
-        method: "POST",
-        body: formData,
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.error ?? "업로드에 실패했습니다.");
-        return;
-      }
-      newUrls.push(data.url);
+    if (!user) {
+      setError("로그인이 필요합니다.");
+      return;
     }
 
-    const combined = [...mediaUrls, ...newUrls].slice(0, MAX_PHOTOS);
-    setMediaUrls(combined);
+    const filesArray = Array.from(files);
+    const newItems: { id: string; url: string; isUploading: boolean }[] = filesArray.map(
+      (file, i) => ({
+        id: `pending-${Date.now()}-${i}`,
+        url: URL.createObjectURL(file),
+        isUploading: true,
+      })
+    );
+
+    setMediaItems((prev) => {
+      const combined = [...prev, ...newItems].slice(0, MAX_PHOTOS);
+      const addedCount = combined.length - prev.length;
+      newItems.slice(addedCount).forEach((item) => URL.revokeObjectURL(item.url));
+      return combined;
+    });
     setError("");
     if (fileInputRef.current) fileInputRef.current.value = "";
+
+    const startIndex = mediaItems.length;
+    const addedCount = Math.min(
+      filesArray.length,
+      MAX_PHOTOS - mediaItems.length
+    );
+    for (let i = 0; i < addedCount; i++) {
+      const file = filesArray[i];
+      const index = startIndex + i;
+      uploadToStorage(supabase, "report-photos", user.id, file).then((result) => {
+        if ("error" in result) {
+          setError(result.error);
+          setMediaItems((prev) => {
+            const next = [...prev];
+            const item = next[index];
+            if (item?.url.startsWith("blob:")) URL.revokeObjectURL(item.url);
+            next.splice(index, 1);
+            return next;
+          });
+          return;
+        }
+        setMediaItems((prev) => {
+          const next = [...prev];
+          const item = next[index];
+          if (item?.url.startsWith("blob:")) URL.revokeObjectURL(item.url);
+          next[index] = { id: item.id, url: result.url, isUploading: false };
+          return next;
+        });
+      });
+    }
   };
 
   const removePhoto = (index: number) => {
-    setMediaUrls((prev) => prev.filter((_, i) => i !== index));
+    setMediaItems((prev) => {
+      const item = prev[index];
+      if (item?.url.startsWith("blob:")) URL.revokeObjectURL(item.url);
+      return prev.filter((_, i) => i !== index);
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -155,7 +182,14 @@ export function ReportForm({
       setError(`내용은 ${MAX_CONTENT}자 이하여야 합니다.`);
       return;
     }
-    if (mediaUrls.length > 0 && (mediaUrls.length < MIN_PHOTOS || mediaUrls.length > MAX_PHOTOS)) {
+
+    const doneUrls = mediaItems.filter((m) => !m.isUploading).map((m) => m.url);
+    const hasUploading = mediaItems.some((m) => m.isUploading);
+    if (hasUploading) {
+      setError("사진 업로드가 완료될 때까지 기다려주세요.");
+      return;
+    }
+    if (doneUrls.length > 0 && (doneUrls.length < MIN_PHOTOS || doneUrls.length > MAX_PHOTOS)) {
       setError(`사진은 ${MIN_PHOTOS}~${MAX_PHOTOS}장까지 첨부 가능합니다.`);
       return;
     }
@@ -173,7 +207,7 @@ export function ReportForm({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           content: content.trim(),
-          mediaUrls,
+          mediaUrls: doneUrls,
           dailyRecord: showDailyRecord ? dailyRecord : undefined,
         }),
       });
@@ -197,7 +231,7 @@ export function ReportForm({
         body: JSON.stringify({
           petId,
           content: content.trim(),
-          mediaUrls,
+          mediaUrls: doneUrls,
           dailyRecord: showDailyRecord ? dailyRecord : undefined,
         }),
       });
@@ -230,7 +264,7 @@ export function ReportForm({
         <div className="flex overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-sm">
           <button
             type="submit"
-            disabled={isLoading}
+            disabled={isLoading || mediaItems.some((m) => m.isUploading)}
             className={submitButtonStyle}
           >
             {isLoading ? (
@@ -373,13 +407,18 @@ export function ReportForm({
           사진 (선택, 1~10장)
         </label>
         <div className="flex flex-wrap gap-2">
-          {mediaUrls.map((url, i) => (
-            <div key={i} className="relative">
+          {mediaItems.map((item, i) => (
+            <div key={item.id} className="relative">
               <img
-                src={url}
+                src={item.url}
                 alt={`첨부 ${i + 1}`}
                 className="h-20 w-20 rounded-lg object-cover"
               />
+              {item.isUploading && (
+                <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-black/30">
+                  <span className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                </div>
+              )}
               <button
                 type="button"
                 onClick={() => removePhoto(i)}
@@ -389,7 +428,7 @@ export function ReportForm({
               </button>
             </div>
           ))}
-          {mediaUrls.length < MAX_PHOTOS && (
+          {mediaItems.length < MAX_PHOTOS && (
             <label className="flex h-20 w-20 cursor-pointer items-center justify-center rounded-lg border-2 border-dashed border-zinc-300 bg-zinc-50 text-2xl text-zinc-400 hover:border-zinc-400">
               +
               <input
@@ -404,7 +443,7 @@ export function ReportForm({
           )}
         </div>
         <p className="mt-1 text-xs text-zinc-500">
-          {mediaUrls.length}장 / 최대 {MAX_PHOTOS}장
+          {mediaItems.length}장 / 최대 {MAX_PHOTOS}장
         </p>
       </div>
 
@@ -424,7 +463,12 @@ export function ReportForm({
             </Button>
           </Link>
           <div className="flex-1">
-            <Button type="submit" fullWidth isLoading={isLoading}>
+            <Button
+              type="submit"
+              fullWidth
+              isLoading={isLoading}
+              disabled={mediaItems.some((m) => m.isUploading)}
+            >
               작성
             </Button>
           </div>
