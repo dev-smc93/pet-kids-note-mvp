@@ -5,6 +5,15 @@ import { Button } from "@/components/ui/button";
 
 const DISMISS_KEY = "pwa-install-dismissed";
 const IN_APP_BROWSER_DISMISS_KEY = "pwa-inapp-browser-dismissed";
+const DISMISS_EXPIRY_MS = 24 * 60 * 60 * 1000; // 1일
+
+function isDismissExpired(key: string): boolean {
+  const stored = localStorage.getItem(key);
+  if (!stored) return true;
+  const timestamp = parseInt(stored, 10);
+  if (Number.isNaN(timestamp)) return true;
+  return Date.now() - timestamp > DISMISS_EXPIRY_MS;
+}
 
 interface InstallPromptEvent extends Event {
   prompt(): Promise<void>;
@@ -63,13 +72,15 @@ export function InstallPrompt() {
     }
 
     if (isInAppBrowser()) {
-      const dismissed = localStorage.getItem(IN_APP_BROWSER_DISMISS_KEY);
-      if (!dismissed) setShowInAppBanner(true);
+      if (isDismissExpired(IN_APP_BROWSER_DISMISS_KEY)) {
+        localStorage.removeItem(IN_APP_BROWSER_DISMISS_KEY);
+        setShowInAppBanner(true);
+      }
       return;
     }
 
-    const dismissed = localStorage.getItem(DISMISS_KEY);
-    if (dismissed) return;
+    if (!isDismissExpired(DISMISS_KEY)) return;
+    localStorage.removeItem(DISMISS_KEY);
 
     const handler = (e: Event) => {
       e.preventDefault();
