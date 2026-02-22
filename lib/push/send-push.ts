@@ -38,12 +38,9 @@ export async function sendPushToUser(
     url: payload.url ?? "/",
   });
 
-  let sent = 0;
-  let failed = 0;
-
-  for (const sub of subscriptions) {
-    try {
-      await webpush.sendNotification(
+  const results = await Promise.allSettled(
+    subscriptions.map((sub) =>
+      webpush.sendNotification(
         {
           endpoint: sub.endpoint,
           keys: {
@@ -55,10 +52,21 @@ export async function sendPushToUser(
         {
           TTL: 60 * 60 * 24,
         }
-      );
+      )
+    )
+  );
+
+  let sent = 0;
+  let failed = 0;
+
+  for (let i = 0; i < results.length; i++) {
+    const result = results[i];
+    const sub = subscriptions[i];
+    if (result.status === "fulfilled") {
       sent++;
-    } catch (err) {
+    } else {
       failed++;
+      const err = result.reason;
       if (err && typeof err === "object" && "statusCode" in err) {
         const statusCode = (err as { statusCode: number }).statusCode;
         if (statusCode === 410 || statusCode === 404) {

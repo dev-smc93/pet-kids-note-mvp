@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/api/auth";
 import { sendPushToUser } from "@/lib/push/send-push";
@@ -51,11 +51,13 @@ export async function POST(
     });
   }
 
-  sendPushToUser(guardianUserId, {
-    title: "알림장 재알림",
-    body: `${report.pet.name} 알림장을 확인해주세요.`,
-    url: `/reports/${reportId}`,
-  }).catch(() => {});
+  after(() =>
+    sendPushToUser(guardianUserId, {
+      title: "알림장 재알림",
+      body: `${report.pet.name} 알림장을 확인해주세요.`,
+      url: `/reports/${reportId}`,
+    })
+  );
 
   return NextResponse.json({
     success: true,

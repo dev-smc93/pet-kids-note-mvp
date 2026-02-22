@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getAuthUser } from "@/lib/api/auth";
 import { sendPushToUser } from "@/lib/push/send-push";
@@ -147,11 +147,13 @@ export async function POST(request: Request) {
 
   const guardianUserId = report.pet.ownerUserId;
   if (guardianUserId !== profile!.userId) {
-    sendPushToUser(guardianUserId, {
-      title: "새 알림장이 등록되었습니다",
-      body: `${report.pet.name} - ${report.author.name}`,
-      url: `/reports/${report.id}`,
-    }).catch(() => {});
+    after(() =>
+      sendPushToUser(guardianUserId, {
+        title: "새 알림장이 등록되었습니다",
+        body: `${report.pet.name} - ${report.author.name}`,
+        url: `/reports/${report.id}`,
+      })
+    );
   }
 
   return NextResponse.json(report);

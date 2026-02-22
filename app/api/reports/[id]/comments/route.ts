@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getAuthUser } from "@/lib/api/auth";
 import { sendPushToUser } from "@/lib/push/send-push";
@@ -171,13 +171,17 @@ export async function POST(
     const uniqueRecipients = [...new Set(recipientUserIds)].filter(
       (id) => id !== profile!.userId
     );
-    for (const userId of uniqueRecipients) {
-      sendPushToUser(userId, {
-        title: "알림장에 새 댓글이 달렸습니다",
-        body: comment.content.slice(0, 50) + (comment.content.length > 50 ? "…" : ""),
-        url: `/reports/${reportId}`,
-      }).catch(() => {});
-    }
+    after(() =>
+      Promise.all(
+        uniqueRecipients.map((userId) =>
+          sendPushToUser(userId, {
+            title: "알림장에 새 댓글이 달렸습니다",
+            body: comment.content.slice(0, 50) + (comment.content.length > 50 ? "…" : ""),
+            url: `/reports/${reportId}`,
+          })
+        )
+      )
+    );
   }
 
   return NextResponse.json(comment);
