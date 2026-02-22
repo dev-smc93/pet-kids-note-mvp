@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import { AuthProvider } from "@/components/providers/auth-provider";
 import { InstallPrompt } from "@/components/install-prompt";
 import { IMAGES } from "@/lib/constants/images";
@@ -69,6 +70,7 @@ export default function RootLayout({
         <AuthProvider>
           {children}
           <InstallPrompt />
+          <SpeedInsights />
         </AuthProvider>
       </body>
     </html>
