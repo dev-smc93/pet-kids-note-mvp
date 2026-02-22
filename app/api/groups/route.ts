@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getAuthUser, requireAdmin } from "@/lib/api/auth";
+
+type GroupWithMembershipCounts = Prisma.GroupGetPayload<{
+  include: { memberships: { select: { status: true } } };
+}>;
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -46,7 +51,7 @@ export async function GET(request: Request) {
     },
   });
 
-  const groupsWithCounts = groups.map((g) => {
+  const groupsWithCounts = groups.map((g: GroupWithMembershipCounts) => {
     const approved = g.memberships.filter((m) => m.status === "APPROVED").length;
     const pending = g.memberships.filter((m) => m.status === "PENDING").length;
     const rejected = g.memberships.filter((m) => m.status === "REJECTED").length;
