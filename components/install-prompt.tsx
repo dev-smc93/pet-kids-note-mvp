@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 
 const DISMISS_KEY = "pwa-install-dismissed";
 const IN_APP_BROWSER_DISMISS_KEY = "pwa-inapp-browser-dismissed";
-const DISMISS_EXPIRY_MS = 24 * 60 * 60 * 1000; // 1일
+const DISMISS_EXPIRY_MS = 2 * 60 * 1000; // 2분 (테스트용, 배포 시 24*60*60*1000으로 변경)
 
 function isDismissExpired(key: string): boolean {
   const stored = localStorage.getItem(key);
