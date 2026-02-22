@@ -75,8 +75,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(currentUser ?? null);
       if (currentUser) {
         const isServerDataPage = pathname === "/reports" || pathname === "/";
-        setIsProfileLoading(true);
         if (!isServerDataPage) {
+          setIsProfileLoading(true);
           fetchProfile(currentUser.id).finally(() => setIsProfileLoading(false));
         }
       }
