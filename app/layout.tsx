@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { AuthProvider } from "@/components/providers/auth-provider";
+import { PageTransition } from "@/components/page-transition";
 import { InstallPrompt } from "@/components/install-prompt";
 import { IMAGES } from "@/lib/constants/images";
 import "./globals.css";
@@ -68,7 +69,7 @@ export default function RootLayout({
     <html lang="ko">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <AuthProvider>
-          {children}
+          <PageTransition>{children}</PageTransition>
           <InstallPrompt />
           <SpeedInsights />
         </AuthProvider>
