@@ -110,13 +110,13 @@ export default function ReportDetailPage() {
   };
 
   const fetchComments = () => {
-    fetch(`/api/reports/${reportId}/comments`)
+    fetch(`/api/reports/${reportId}/comments`, { cache: "no-store" })
       .then((res) => (res.ok ? res.json() : []))
       .then(setComments);
   };
 
   const fetchScheduledComments = () => {
-    fetch(`/api/reports/${reportId}/comments?scheduled=true`)
+    fetch(`/api/reports/${reportId}/comments?scheduled=true`, { cache: "no-store" })
       .then((res) => (res.ok ? res.json() : []))
       .then(setScheduledComments);
   };
