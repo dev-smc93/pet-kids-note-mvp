@@ -19,6 +19,9 @@ export function ProfileForm() {
     if (profile) {
       setName(profile.name);
       setRole(profile.role);
+    } else {
+      setName("");
+      setRole("GUARDIAN");
     }
   }, [profile]);
 

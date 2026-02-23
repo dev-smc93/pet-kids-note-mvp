@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useAuth } from "@/lib/auth/auth-context";
 
 export function SignupForm() {
@@ -14,7 +13,6 @@ export function SignupForm() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [showEmailSentDialog, setShowEmailSentDialog] = useState(false);
   const { signUp } = useAuth();
   const router = useRouter();
 
@@ -42,7 +40,10 @@ export function SignupForm() {
       return;
     }
 
-    setShowEmailSentDialog(true);
+    // auth 상태 전파 후 프로필 설정 화면으로 이동
+    await new Promise((r) => setTimeout(r, 100));
+    router.push("/auth/profile");
+    router.refresh();
     setIsLoading(false);
   };
 
@@ -94,25 +95,6 @@ export function SignupForm() {
           로그인
         </Link>
       </p>
-
-      <ConfirmDialog
-        open={showEmailSentDialog}
-        onOpenChange={(open) => {
-          if (!open) {
-            setShowEmailSentDialog(false);
-            router.push("/auth/login");
-            router.refresh();
-          }
-        }}
-        title="회원가입 완료"
-        description="회원가입이 완료되었습니다. 로그인해 주세요."
-        confirmText="확인"
-        showCancel={false}
-        onConfirm={() => {
-          router.push("/auth/login");
-          router.refresh();
-        }}
-      />
     </form>
   );
 }

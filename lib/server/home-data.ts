@@ -1,8 +1,8 @@
 import { prisma } from "@/lib/prisma";
-import { getAuthUser } from "@/lib/api/auth";
+import { getAuthUserAllowNoProfile } from "@/lib/api/auth";
 
 export async function getHomeData() {
-  const { user, profile, error } = await getAuthUser();
+  const { user, profile, error } = await getAuthUserAllowNoProfile();
   if (error || !profile) {
     return { profile: null, user: user ?? null, groupCount: 0, unreadCount: 0, error };
   }

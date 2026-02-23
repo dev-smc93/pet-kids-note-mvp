@@ -5,6 +5,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -31,6 +32,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isProfileLoading, setIsProfileLoading] = useState(false);
+  const prevUserIdRef = useRef<string | null>(null);
   const supabase = createClient();
 
   const setProfileFromBootstrap = useCallback((p: Profile | null) => {
@@ -39,12 +41,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const fetchProfile = useCallback(async (userId: string) => {
-    const res = await fetch("/api/auth/profile");
+    const res = await fetch("/api/auth/profile", { cache: "no-store" });
     if (res.ok) {
       const data = await res.json();
       setProfile(data);
+    } else if (res.status === 404) {
+      // 신규 가입자 등 프로필이 없음 → null로 설정 (이전 계정 프로필 잔존 방지)
+      setProfile(null);
     }
-    // 실패 시 setProfile(null) 호출하지 않음 → 기존 profile 유지 (원 관리 등 페이지 리다이렉트 방지)
+    // 404 외 실패(네트워크 등) 시 기존 profile 유지 (원 관리 등 페이지 리다이렉트 방지)
   }, []);
 
   const refreshProfile = useCallback(async () => {
@@ -60,10 +65,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       setUser(session?.user ?? null);
       if (session?.user) {
+        if (prevUserIdRef.current !== session.user.id) {
+          setProfile(null); // 새 사용자 전환 시 이전 프로필 제거 (회원가입 직후 이전 닉네임 노출 방지)
+          prevUserIdRef.current = session.user.id;
+        }
         setIsProfileLoading(true);
         await fetchProfile(session.user.id);
         setIsProfileLoading(false);
       } else {
+        prevUserIdRef.current = null;
         setProfile(null);
       }
     });

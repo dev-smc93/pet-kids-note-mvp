@@ -24,6 +24,25 @@ export async function getAuthUser() {
   return { user, profile, error: null };
 }
 
+/** 프로필 없어도 에러 반환 안 함 (리다이렉트 로직용, 회원가입 미완료 사용자 허용) */
+export async function getAuthUserAllowNoProfile() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    return { user: null, profile: null, error: NextResponse.json({ error: "인증이 필요합니다." }, { status: 401 }) };
+  }
+
+  const profile = await prisma.profile.findUnique({
+    where: { userId: user.id },
+  });
+
+  return { user, profile, error: null };
+}
+
 export async function requireAdmin() {
   const result = await getAuthUser();
   if (result.error) return result;
