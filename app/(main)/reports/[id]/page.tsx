@@ -76,6 +76,7 @@ export default function ReportDetailPage() {
   const contentScrollRef = useRef<HTMLDivElement>(null);
   const [showScrollArrow, setShowScrollArrow] = useState(false);
   const pollingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const isMountedRef = useRef(true);
 
   const LAST_SCHEDULE_KEY = "comment_schedule_last";
 
@@ -189,6 +190,7 @@ export default function ReportDetailPage() {
   // Realtime 실패(TIMED_OUT 등) 시 폴링 fallback으로 4초마다 댓글 새로고침
   useEffect(() => {
     if (!reportId) return;
+    isMountedRef.current = true;
 
     const startPollingFallback = () => {
       if (pollingIntervalRef.current) return;
@@ -231,12 +233,16 @@ export default function ReportDetailPage() {
             console.error("[Realtime] CHANNEL_ERROR:", err);
           }
         }
-        if (status === "TIMED_OUT" || status === "CHANNEL_ERROR") {
+        if (
+          (status === "TIMED_OUT" || status === "CHANNEL_ERROR" || status === "CLOSED") &&
+          isMountedRef.current
+        ) {
           startPollingFallback();
         }
       });
 
     return () => {
+      isMountedRef.current = false;
       supabase.removeChannel(channel);
       if (pollingIntervalRef.current) {
         clearInterval(pollingIntervalRef.current);
