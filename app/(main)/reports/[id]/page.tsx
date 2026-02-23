@@ -186,7 +186,7 @@ export default function ReportDetailPage() {
   }, [report?.id, report?.isRead, reportId]);
 
   // Supabase Realtime: 댓글 INSERT/UPDATE/DELETE 시 즉시 반영
-  // Realtime 실패(TIMED_OUT 등) 시 폴링 fallback으로 10초마다 댓글 새로고침
+  // Realtime 실패(TIMED_OUT 등) 시 폴링 fallback으로 4초마다 댓글 새로고침
   useEffect(() => {
     if (!reportId) return;
 
@@ -195,9 +195,9 @@ export default function ReportDetailPage() {
       pollingIntervalRef.current = setInterval(() => {
         fetchComments();
         fetchScheduledComments();
-      }, 10_000);
+      }, 4_000);
       if (process.env.NODE_ENV === "development") {
-        console.log("[Realtime] 폴링 fallback 시작 (10초 간격)");
+        console.log("[Realtime] 폴링 fallback 시작 (4초 간격)");
       }
     };
 
