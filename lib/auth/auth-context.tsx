@@ -43,9 +43,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (res.ok) {
       const data = await res.json();
       setProfile(data);
-    } else {
-      setProfile(null);
     }
+    // 실패 시 setProfile(null) 호출하지 않음 → 기존 profile 유지 (원 관리 등 페이지 리다이렉트 방지)
   }, []);
 
   const refreshProfile = useCallback(async () => {
@@ -76,7 +75,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(currentUser ?? null);
       if (currentUser) {
         const isServerDataPage = pathname === "/reports" || pathname === "/";
-        if (!isServerDataPage) {
+        // profile이 이미 있으면 fetch 생략 → 원 관리 즉시 진입 (로딩·깜빡임 방지)
+        // profile을 deps에 넣으면 effect 반복 실행 → 깜빡임 발생
+        if (!isServerDataPage && !profile) {
           setIsProfileLoading(true);
           fetchProfile(currentUser.id).finally(() => setIsProfileLoading(false));
         }
@@ -87,6 +88,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     init();
 
     return () => subscription.unsubscribe();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- profile 추가 시 effect 반복 실행으로 깜빡임
   }, [supabase.auth, fetchProfile, pathname]);
 
   const signIn = useCallback(
