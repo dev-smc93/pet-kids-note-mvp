@@ -89,13 +89,32 @@ export async function POST(request: Request) {
     );
   }
 
+  const trimmedSido = sido.trim();
+  const trimmedSigungu = typeof sigungu === "string" ? sigungu.trim() : "";
+  const trimmedAddress = typeof address === "string" ? address.trim() : "";
+
+  const existing = await prisma.group.findFirst({
+    where: {
+      name: name.trim(),
+      sido: trimmedSido,
+      sigungu: trimmedSigungu,
+      address: trimmedAddress,
+    },
+  });
+  if (existing) {
+    return NextResponse.json(
+      { error: "이미 등록된 원입니다. (동일한 이름·주소)" },
+      { status: 409 }
+    );
+  }
+
   const group = await prisma.group.create({
     data: {
       name: name.trim(),
       ownerUserId: profile!.userId,
-      sido: (sido || "").trim(),
-      sigungu: typeof sigungu === "string" ? sigungu.trim() : "",
-      address: typeof address === "string" ? address.trim() : "",
+      sido: trimmedSido,
+      sigungu: trimmedSigungu,
+      address: trimmedAddress,
     },
   });
 

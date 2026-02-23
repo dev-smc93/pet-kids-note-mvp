@@ -67,6 +67,7 @@ model Group {
   owner        Profile      @relation("GroupOwner", fields: [ownerUserId], references: [userId], onDelete: Cascade)
   memberships  Membership[]
 
+  @@unique([name, sido, sigungu, address])
   @@map("groups")
 }
 
