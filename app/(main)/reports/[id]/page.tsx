@@ -7,7 +7,6 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import { Pagination } from "swiper/modules";
 import "swiper/css";
 import "swiper/css/pagination";
-import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/lib/auth/auth-context";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
@@ -76,7 +75,6 @@ export default function ReportDetailPage() {
   const contentScrollRef = useRef<HTMLDivElement>(null);
   const [showScrollArrow, setShowScrollArrow] = useState(false);
   const pollingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const isMountedRef = useRef(true);
 
   const LAST_SCHEDULE_KEY = "comment_schedule_last";
 
@@ -186,64 +184,14 @@ export default function ReportDetailPage() {
     }
   }, [report?.id, report?.isRead, reportId]);
 
-  // Supabase Realtime: 댓글 INSERT/UPDATE/DELETE 시 즉시 반영
-  // Realtime 실패(TIMED_OUT 등) 시 폴링 fallback으로 4초마다 댓글 새로고침
+  // 댓글 폴링: 4초마다 댓글/예약댓글 새로고침 (다른 사용자 변경 반영)
   useEffect(() => {
     if (!reportId) return;
-    isMountedRef.current = true;
-
-    const startPollingFallback = () => {
-      if (pollingIntervalRef.current) return;
-      pollingIntervalRef.current = setInterval(() => {
-        fetchComments();
-        fetchScheduledComments();
-      }, 4_000);
-      if (process.env.NODE_ENV === "development") {
-        console.log("[Realtime] 폴링 fallback 시작 (4초 간격)");
-      }
-    };
-
-    const supabase = createClient();
-    const channel = supabase
-      .channel(`report-comments-${reportId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "report_comments",
-        },
-        (payload) => {
-          if (process.env.NODE_ENV === "development") {
-            console.log("[Realtime] payload:", payload);
-          }
-          const reportIdFromPayload =
-            (payload.new as { report_id?: string } | null)?.report_id ??
-            (payload.old as { report_id?: string } | null)?.report_id;
-          if (reportIdFromPayload === reportId) {
-            fetchComments();
-            fetchScheduledComments();
-          }
-        }
-      )
-      .subscribe((status, err) => {
-        if (process.env.NODE_ENV === "development") {
-          console.log("[Realtime] status:", status, err ?? "");
-          if (status === "CHANNEL_ERROR") {
-            console.error("[Realtime] CHANNEL_ERROR:", err);
-          }
-        }
-        if (
-          (status === "TIMED_OUT" || status === "CHANNEL_ERROR" || status === "CLOSED") &&
-          isMountedRef.current
-        ) {
-          startPollingFallback();
-        }
-      });
-
+    pollingIntervalRef.current = setInterval(() => {
+      fetchComments();
+      fetchScheduledComments();
+    }, 4_000);
     return () => {
-      isMountedRef.current = false;
-      supabase.removeChannel(channel);
       if (pollingIntervalRef.current) {
         clearInterval(pollingIntervalRef.current);
         pollingIntervalRef.current = null;
