@@ -75,6 +75,7 @@ export default function ReportDetailPage() {
   const prevCommentCountRef = useRef(0);
   const contentScrollRef = useRef<HTMLDivElement>(null);
   const [showScrollArrow, setShowScrollArrow] = useState(false);
+  const pollingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const LAST_SCHEDULE_KEY = "comment_schedule_last";
 
@@ -185,8 +186,21 @@ export default function ReportDetailPage() {
   }, [report?.id, report?.isRead, reportId]);
 
   // Supabase Realtime: 댓글 INSERT/UPDATE/DELETE 시 즉시 반영
+  // Realtime 실패(TIMED_OUT 등) 시 폴링 fallback으로 10초마다 댓글 새로고침
   useEffect(() => {
     if (!reportId) return;
+
+    const startPollingFallback = () => {
+      if (pollingIntervalRef.current) return;
+      pollingIntervalRef.current = setInterval(() => {
+        fetchComments();
+        fetchScheduledComments();
+      }, 10_000);
+      if (process.env.NODE_ENV === "development") {
+        console.log("[Realtime] 폴링 fallback 시작 (10초 간격)");
+      }
+    };
+
     const supabase = createClient();
     const channel = supabase
       .channel(`report-comments-${reportId}`)
@@ -198,6 +212,9 @@ export default function ReportDetailPage() {
           table: "report_comments",
         },
         (payload) => {
+          if (process.env.NODE_ENV === "development") {
+            console.log("[Realtime] payload:", payload);
+          }
           const reportIdFromPayload =
             (payload.new as { report_id?: string } | null)?.report_id ??
             (payload.old as { report_id?: string } | null)?.report_id;
@@ -207,9 +224,24 @@ export default function ReportDetailPage() {
           }
         }
       )
-      .subscribe();
+      .subscribe((status, err) => {
+        if (process.env.NODE_ENV === "development") {
+          console.log("[Realtime] status:", status, err ?? "");
+          if (status === "CHANNEL_ERROR") {
+            console.error("[Realtime] CHANNEL_ERROR:", err);
+          }
+        }
+        if (status === "TIMED_OUT" || status === "CHANNEL_ERROR") {
+          startPollingFallback();
+        }
+      });
+
     return () => {
       supabase.removeChannel(channel);
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+        pollingIntervalRef.current = null;
+      }
     };
   }, [reportId]);
 
