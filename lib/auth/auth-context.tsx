@@ -75,7 +75,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(currentUser ?? null);
       if (currentUser) {
         const isServerDataPage = pathname === "/reports" || pathname === "/";
-        // profile이 이미 있으면 fetch 생략 → 원 관리 즉시 진입 (로딩·깜빡임 방지)
+        // profile이 이미 있으면 fetch 생략 → 원 관리·내 반려동물 즉시 진입 (로딩·깜빡임 방지)
         // profile을 deps에 넣으면 effect 반복 실행 → 깜빡임 발생
         if (!isServerDataPage && !profile) {
           setIsProfileLoading(true);

@@ -8,16 +8,16 @@ import { GroupList } from "@/components/groups/group-list";
 import { MainHeader } from "@/components/layout/main-header";
 
 export default function GroupsPage() {
-  const { profile, isLoading } = useAuth();
+  const { profile, isLoading, isProfileLoading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (!isLoading && profile?.role !== "ADMIN") {
+    if (!isLoading && !isProfileLoading && profile?.role !== "ADMIN") {
       router.replace("/");
     }
-  }, [profile, isLoading, router]);
+  }, [profile, isLoading, isProfileLoading, router]);
 
-  if (isLoading || profile?.role !== "ADMIN") {
+  if (isLoading || isProfileLoading || profile?.role !== "ADMIN") {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-zinc-300 border-t-zinc-900" />

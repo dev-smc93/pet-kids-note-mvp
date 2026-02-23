@@ -8,16 +8,16 @@ import { MyPetsList } from "@/components/join/my-pets-list";
 import { MainHeader } from "@/components/layout/main-header";
 
 export default function MyPetsPage() {
-  const { profile, isLoading } = useAuth();
+  const { profile, isLoading, isProfileLoading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (!isLoading && profile?.role !== "GUARDIAN") {
+    if (!isLoading && !isProfileLoading && profile?.role !== "GUARDIAN") {
       router.replace("/");
     }
-  }, [profile, isLoading, router]);
+  }, [profile, isLoading, isProfileLoading, router]);
 
-  if (isLoading || profile?.role !== "GUARDIAN") {
+  if (isLoading || isProfileLoading || profile?.role !== "GUARDIAN") {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-zinc-300 border-t-zinc-900" />
