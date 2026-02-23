@@ -20,6 +20,7 @@ export default function EditPetPage({
     photoUrl: string | null;
     note: string | null;
   } | null>(null);
+  const [isPetLoading, setIsPetLoading] = useState(true);
   const { profile, isLoading } = useAuth();
   const router = useRouter();
 
@@ -35,15 +36,17 @@ export default function EditPetPage({
 
   useEffect(() => {
     if (!petId) return;
+    setIsPetLoading(true);
     fetch("/api/pets")
       .then((res) => (res.ok ? res.json() : []))
       .then((pets: { id: string; name: string; breed: string | null; photoUrl: string | null; note: string | null }[]) => {
         const found = pets.find((p) => p.id === petId);
         setPet(found ?? null);
-      });
+      })
+      .finally(() => setIsPetLoading(false));
   }, [petId]);
 
-  if (isLoading || profile?.role !== "GUARDIAN" || !petId) {
+  if (isLoading || profile?.role !== "GUARDIAN" || !petId || isPetLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-zinc-300 border-t-zinc-900" />
