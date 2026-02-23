@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth/auth-context";
@@ -56,6 +56,7 @@ export default function SearchCentersPage() {
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const { profile, isLoading: authLoading } = useAuth();
   const router = useRouter();
+  const connectButtonRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!authLoading && profile?.role !== "GUARDIAN") {
@@ -96,6 +97,14 @@ export default function SearchCentersPage() {
       .filter((m) => m.status === "PENDING" || m.status === "APPROVED")
       .map((m) => m.petId)
   );
+
+  const canConnect = selectedGroup && selectedPet && !busyPetIds.has(selectedPet.id);
+
+  useEffect(() => {
+    if (canConnect) {
+      connectButtonRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+    }
+  }, [canConnect]);
 
   const handleRequest = async () => {
     if (!selectedGroup || !selectedPet) {
@@ -138,7 +147,7 @@ export default function SearchCentersPage() {
       <MainHeader variant="back" backHref="/my-pets" backLabel="원 검색" />
 
       <main className="min-h-0 flex-1 overflow-y-auto px-4 py-6">
-        <div className="mx-auto max-w-md space-y-6 pb-4">
+        <div className="mx-auto max-w-md space-y-6">
           <div>
             <p className="text-sm text-zinc-500">
               원 이름으로 검색하거나 시/도로 필터링할 수 있습니다.
@@ -236,6 +245,18 @@ export default function SearchCentersPage() {
             </div>
           )}
 
+          {canConnect && (
+            <div ref={connectButtonRef}>
+              <Button
+                onClick={handleRequest}
+                fullWidth
+                isLoading={isRequesting}
+              >
+                {selectedGroup!.name}에 연결 요청
+              </Button>
+            </div>
+          )}
+
           {message && (
             <p
               className={`rounded-lg p-3 text-sm ${
@@ -258,20 +279,6 @@ export default function SearchCentersPage() {
           )}
         </div>
       </main>
-
-      {selectedGroup && selectedPet && !busyPetIds.has(selectedPet.id) && (
-        <footer className="shrink-0 border-t border-zinc-200 bg-zinc-50 px-4 py-4">
-          <div className="mx-auto max-w-md">
-            <Button
-              onClick={handleRequest}
-              fullWidth
-              isLoading={isRequesting}
-            >
-              {selectedGroup.name}에 연결 요청
-            </Button>
-          </div>
-        </footer>
-      )}
     </div>
   );
 }
