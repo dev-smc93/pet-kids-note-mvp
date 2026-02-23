@@ -137,8 +137,8 @@ export default function SearchCentersPage() {
     <div className="flex min-h-screen flex-col bg-zinc-50">
       <MainHeader variant="back" backHref="/my-pets" backLabel="원 검색" />
 
-      <main className="flex-1 px-4 py-6">
-        <div className="mx-auto max-w-md space-y-6">
+      <main className="min-h-0 flex-1 overflow-y-auto px-4 py-6">
+        <div className="mx-auto max-w-md space-y-6 pb-4">
           <div>
             <p className="text-sm text-zinc-500">
               원 이름으로 검색하거나 시/도로 필터링할 수 있습니다.
@@ -236,16 +236,6 @@ export default function SearchCentersPage() {
             </div>
           )}
 
-          {selectedGroup && selectedPet && !busyPetIds.has(selectedPet.id) && (
-            <Button
-              onClick={handleRequest}
-              fullWidth
-              isLoading={isRequesting}
-            >
-              {selectedGroup.name}에 연결 요청
-            </Button>
-          )}
-
           {message && (
             <p
               className={`rounded-lg p-3 text-sm ${
@@ -268,6 +258,20 @@ export default function SearchCentersPage() {
           )}
         </div>
       </main>
+
+      {selectedGroup && selectedPet && !busyPetIds.has(selectedPet.id) && (
+        <footer className="shrink-0 border-t border-zinc-200 bg-zinc-50 px-4 py-4">
+          <div className="mx-auto max-w-md">
+            <Button
+              onClick={handleRequest}
+              fullWidth
+              isLoading={isRequesting}
+            >
+              {selectedGroup.name}에 연결 요청
+            </Button>
+          </div>
+        </footer>
+      )}
     </div>
   );
 }
