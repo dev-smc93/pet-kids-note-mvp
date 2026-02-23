@@ -15,7 +15,7 @@ export function GroupList() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/groups")
+    fetch("/api/groups", { cache: "no-store" })
       .then((res) => (res.ok ? res.json() : []))
       .then(setGroups)
       .finally(() => setIsLoading(false));
