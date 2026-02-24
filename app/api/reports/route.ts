@@ -146,14 +146,33 @@ export async function POST(request: Request) {
   });
 
   const guardianUserId = report.pet.ownerUserId;
-  if (guardianUserId !== profile!.userId) {
-    after(() =>
-      sendPushToUser(guardianUserId, {
-        title: "새 알림장이 등록되었습니다",
-        body: `${report.pet.name} - ${report.author.name}`,
-        url: `/reports/${report.id}`,
-      })
-    );
+  const pushPayload = {
+    title: "새 알림장이 등록되었습니다",
+    body: `${report.pet.name} - ${report.author.name}`,
+    url: `/reports/${report.id}`,
+  };
+
+  if (guardianUserId === profile!.userId) {
+    // 보호자가 작성 → 해당 반려동물이 연결된 원의 원장(관리자)들에게 푸시
+    after(async () => {
+      const groups = await prisma.group.findMany({
+        where: {
+          memberships: {
+            some: { petId: report.petId, status: "APPROVED" },
+          },
+        },
+        select: { ownerUserId: true },
+      });
+      const recipientUserIds = [...new Set(groups.map((g) => g.ownerUserId))].filter(
+        (id) => id !== profile!.userId
+      );
+      await Promise.all(
+        recipientUserIds.map((userId) => sendPushToUser(userId, pushPayload))
+      );
+    });
+  } else {
+    // 관리자가 작성 → 보호자에게 푸시
+    after(() => sendPushToUser(guardianUserId, pushPayload));
   }
 
   return NextResponse.json(report);
