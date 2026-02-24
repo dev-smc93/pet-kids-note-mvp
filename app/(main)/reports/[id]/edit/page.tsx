@@ -11,6 +11,7 @@ interface ReportData {
   content: string;
   pet: { id: string; name: string };
   media: { id: string; url: string }[];
+  authorUserId?: string;
   isGuardianPost?: boolean;
   dailyRecord?: {
     mood?: string;
@@ -31,16 +32,27 @@ export default function ReportEditPage() {
   const [isLoadingReport, setIsLoadingReport] = useState(true);
 
   useEffect(() => {
-    if (!isLoading && profile?.role !== "ADMIN") {
+    if (!isLoading && !profile) {
       router.replace("/");
       return;
     }
-    if (profile?.role === "ADMIN") {
+    if (profile) {
       setIsLoadingReport(true);
       fetch(`/api/reports/${reportId}`)
         .then((res) => (res.ok ? res.json() : null))
         .then((data) => {
-          if (data?.isGuardianPost) {
+          if (!data) {
+            setReport(null);
+            setIsLoadingReport(false);
+            return;
+          }
+          // 관리자: 보호자 글이면 수정 불가
+          if (profile.role === "ADMIN" && data.isGuardianPost) {
+            router.replace(`/reports/${reportId}`);
+            return;
+          }
+          // 보호자: 본인 글만 수정 가능
+          if (profile.role === "GUARDIAN" && (!data.isGuardianPost || data.authorUserId !== profile.userId)) {
             router.replace(`/reports/${reportId}`);
             return;
           }
@@ -56,7 +68,7 @@ export default function ReportEditPage() {
     }
   }, [profile, isLoading, router, reportId]);
 
-  if (isLoading || profile?.role !== "ADMIN") {
+  if (isLoading || !profile) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-zinc-300 border-t-zinc-900" />
@@ -124,6 +136,7 @@ export default function ReportEditPage() {
             report={report}
             backHref={`/reports/${reportId}`}
             backLabel="취소"
+            showDailyRecord={profile.role === "ADMIN"}
           />
         </div>
       </main>

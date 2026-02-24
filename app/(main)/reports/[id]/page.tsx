@@ -19,6 +19,7 @@ interface ReportDetail {
   updatedAt: string;
   pet: { id: string; name: string; photoUrl: string | null };
   author: { name: string };
+  authorUserId?: string;
   media: { id: string; url: string }[];
   isGuardianPost?: boolean;
   isReadByGuardian?: boolean;
@@ -395,6 +396,10 @@ export default function ReportDetailPage() {
     );
   }
 
+  const canEditDelete =
+    (profile.role === "ADMIN" && !report.isGuardianPost) ||
+    (profile.role === "GUARDIAN" && report.isGuardianPost && report.authorUserId === profile.userId);
+
   const headerActions =
     profile.role === "ADMIN" ? (
       <div className="flex items-center gap-1">
@@ -407,7 +412,7 @@ export default function ReportDetailPage() {
             재알림
           </button>
         )}
-        {!report.isGuardianPost && (
+        {canEditDelete && (
           <>
             <Link
               href={`/reports/${reportId}/edit`}
@@ -425,6 +430,23 @@ export default function ReportDetailPage() {
             </button>
           </>
         )}
+      </div>
+    ) : profile.role === "GUARDIAN" && canEditDelete ? (
+      <div className="flex items-center gap-1">
+        <Link
+          href={`/reports/${reportId}/edit`}
+          className="rounded px-2 py-1.5 text-sm font-medium text-white hover:bg-white/20"
+        >
+          수정
+        </Link>
+        <button
+          type="button"
+          onClick={() => setDeleteOpen(true)}
+          disabled={isDeleting}
+          className="rounded px-2 py-1.5 text-sm font-medium text-white hover:bg-white/20 disabled:opacity-50"
+        >
+          삭제
+        </button>
       </div>
     ) : (
       <div className="h-10 w-10" />

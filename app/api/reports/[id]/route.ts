@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getAuthUser, requireAdmin } from "@/lib/api/auth";
+import { getAuthUser } from "@/lib/api/auth";
 
 const MAX_CONTENT_LENGTH = 5000;
 
@@ -80,6 +80,7 @@ export async function GET(
   return NextResponse.json(
     {
       ...rest,
+      authorUserId: report.authorUserId,
       isGuardianPost,
       isReadByGuardian,
       isRead:
@@ -101,12 +102,12 @@ export async function GET(
   );
 }
 
-// PATCH: 알림장 수정 (관리자)
+// PATCH: 알림장 수정 (관리자: 본인 글만 / 보호자: 본인 글만)
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { profile, error } = await requireAdmin();
+  const { profile, error } = await getAuthUser();
   if (error) return error;
 
   const { id } = await params;
@@ -115,9 +116,15 @@ export async function PATCH(
   if (!report) {
     return NextResponse.json({ error: "알림장을 찾을 수 없습니다." }, { status: 404 });
   }
-  if (report.authorUserId === report.pet.ownerUserId) {
+
+  // 본인만 수정 가능: 관리자는 관리자 글이어야 함, 보호자는 보호자 본인 글이어야 함
+  const isGuardianPost = report.authorUserId === report.pet.ownerUserId;
+  if (profile!.role === "ADMIN"
+    ? isGuardianPost
+    : profile!.userId !== report.authorUserId
+  ) {
     return NextResponse.json(
-      { error: "보호자가 작성한 글은 수정할 수 없습니다." },
+      { error: "수정 권한이 없습니다." },
       { status: 403 }
     );
   }
@@ -153,8 +160,9 @@ export async function PATCH(
     };
   }
 
-  const dr = sanitizeDailyRecord(dailyRecord);
-  if (dailyRecord !== undefined) {
+  // 생활기록: 관리자만 수정 가능 (보호자 글에는 없음)
+  const dr = profile!.role === "ADMIN" ? sanitizeDailyRecord(dailyRecord) : null;
+  if (profile!.role === "ADMIN" && dailyRecord !== undefined) {
     if (dr) {
       data.dailyRecord = {
         upsert: {
@@ -163,7 +171,6 @@ export async function PATCH(
         },
       };
     } else if (report.dailyRecord) {
-      // 생활기록이 있을 때만 삭제 (없는 경우 delete 시 P2025 에러)
       data.dailyRecord = { delete: true };
     }
   }
@@ -182,12 +189,12 @@ export async function PATCH(
   return NextResponse.json(updated);
 }
 
-// DELETE: 알림장 삭제 (관리자)
+// DELETE: 알림장 삭제 (관리자: 본인 글만 / 보호자: 본인 글만)
 export async function DELETE(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { profile, error } = await requireAdmin();
+  const { profile, error } = await getAuthUser();
   if (error) return error;
 
   const { id } = await params;
@@ -196,9 +203,14 @@ export async function DELETE(
   if (!report) {
     return NextResponse.json({ error: "알림장을 찾을 수 없습니다." }, { status: 404 });
   }
-  if (report.authorUserId === report.pet.ownerUserId) {
+
+  const isGuardianPost = report.authorUserId === report.pet.ownerUserId;
+  if (profile!.role === "ADMIN"
+    ? isGuardianPost
+    : profile!.userId !== report.authorUserId
+  ) {
     return NextResponse.json(
-      { error: "보호자가 작성한 글은 삭제할 수 없습니다." },
+      { error: "삭제 권한이 없습니다." },
       { status: 403 }
     );
   }
